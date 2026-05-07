@@ -1,0 +1,153 @@
+{
+  "entities": {
+    "Notification": {
+      "title": "Notification",
+      "description": "A real-time alert for the user.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Short title of the alert." },
+        "message": { "type": "string", "description": "Detailed message body." },
+        "type": { "type": "string", "enum": ["offer", "system", "hr"], "description": "Category of alert." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the alert was sent." },
+        "read": { "type": "boolean", "description": "Whether the user has seen it." }
+      },
+      "required": ["title", "message", "type", "timestamp", "read"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A single chat message in a session.",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string", "description": "Content of the message." },
+        "sender": { "type": "string", "enum": ["user", "genie"], "description": "Who sent the message." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When it was sent." }
+      },
+      "required": ["text", "sender", "timestamp"]
+    },
+    "Session": {
+      "title": "Session",
+      "description": "A chat session with Genie.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Session name or summary." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the session started." }
+      },
+      "required": ["title", "createdAt"]
+    },
+    "User": {
+      "title": "User",
+      "description": "A user profile document.",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string", "description": "User's full name." },
+        "email": { "type": "string", "format": "email", "description": "User's email address." },
+        "role": { "type": "string", "enum": ["admin", "user"], "description": "Access level." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the account was created." }
+      },
+      "required": ["displayName", "email", "role", "createdAt"]
+    },
+    "AvatarSettings": {
+      "title": "AvatarSettings",
+      "description": "Configuration for the AI Avatar personality.",
+      "type": "object",
+      "properties": {
+        "mode": { "type": "string", "enum": ["Assist", "Shadow", "Delegated", "Safe"], "description": "Operational mode." },
+        "personalityTraits": { "type": "array", "items": { "type": "string" }, "description": "Key traits to mirror." },
+        "autoResponseEnabled": { "type": "boolean", "description": "Allows AI to talk to others on user's behalf." }
+      },
+      "required": ["mode", "autoResponseEnabled"]
+    },
+    "AvatarAction": {
+      "title": "AvatarAction",
+      "description": "Log of actions taken by the Avatar in user's absence.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "description": "Action category (e.g., 'Replied to Lead')." },
+        "summary": { "type": "string", "description": "What was done." },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["completed", "escalated", "pending"] }
+      },
+      "required": ["type", "summary", "timestamp", "status"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A project task in the system matrix.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "assignee": { "type": "string" },
+        "priority": { "type": "string", "enum": ["Low", "Medium", "High"] },
+        "status": { "type": "string", "enum": ["To Do", "In Progress", "Completed"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "assignee", "priority", "status", "createdAt"]
+    },
+    "Activity": {
+      "title": "Activity",
+      "description": "A system or AI activity log entry.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["ai", "system", "intelligence", "campaign"], "description": "Type of activity." },
+        "message": { "type": "string", "description": "The activity message." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Server-side timestamp." }
+      },
+      "required": ["type", "message", "timestamp"]
+    },
+    "FollowUp": {
+      "title": "FollowUp",
+      "description": "A scheduled follow-up for a contact or team member.",
+      "type": "object",
+      "properties": {
+        "targetName": { "type": "string" },
+        "targetEmail": { "type": "string", "format": "email" },
+        "targetRole": { "type": "string" },
+        "scheduledAt": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "creatorEmail": { "type": "string", "format": "email" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "completed", "cancelled"] }
+      },
+      "required": ["targetName", "targetEmail", "scheduledAt", "createdBy", "createdAt", "status"]
+    }
+  },
+  "firestore": {
+    "/followups/{followupId}": {
+      "schema": "FollowUp",
+      "description": "Collection of scheduled follow-ups."
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Global task matrix for the team."
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data including roles."
+    },
+    "/users/{userId}/avatar/settings": {
+      "schema": "AvatarSettings",
+      "description": "User's AI Avatar configuration."
+    },
+    "/users/{userId}/avatar/actions": {
+      "schema": "AvatarAction",
+      "description": "Log of actions performed by the AI Avatar."
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User-specific real-time notifications."
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": "Session",
+      "description": "User chat sessions."
+    },
+    "/users/{userId}/sessions/{sessionId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages within a specific chat session."
+    },
+    "/activities/{activityId}": {
+      "schema": "Activity",
+      "description": "Global log of system and AI activities."
+    }
+  }
+}

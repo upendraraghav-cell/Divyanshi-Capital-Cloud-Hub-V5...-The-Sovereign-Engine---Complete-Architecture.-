@@ -1,0 +1,231 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users/{userId}/notifications
+    // Fields:
+    //   - title: string (required, 1-100 chars)
+    //   - message: string (required, 1-1000 chars)
+    //   - type: string (required, enum: ['offer', 'system', 'hr'])
+    //   - timestamp: timestamp (required)
+    //   - read: bool (required)
+    //
+    // Collection: users/{userId}/sessions
+    // Fields:
+    //   - title: string (required, 1-200 chars)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: users/{userId}/sessions/{sessionId}/messages
+    // Fields:
+    //   - text: string (required, 1-5000 chars)
+    //   - sender: string (required, enum: ['user', 'genie'])
+    //   - timestamp: timestamp (required)
+    //
+    // Collection: activities
+    // Fields:
+    //   - type: string (required, enum: ['ai', 'system', 'intelligence', 'campaign'])
+    //   - message: string (required, 1-1000 chars)
+    //   - timestamp: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' || 
+         ((request.auth.token.email.lower() == "upendra.raghav@divyanshicapital.com" || request.auth.token.email.lower() == "u.raghav003@gmail.com") && request.auth.token.email_verified == true));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidAIConfig(data) {
+      return data.primaryModel in ['LAILA', 'BULBHUL'] &&
+             data.personalityTraits is list &&
+             data.coreInstructions is string &&
+             data.brandTone in ['Professional', 'Enthusiastic', 'Aggressive', 'Empathetic'] &&
+             data.loyaltyLevel is int &&
+             data.workEthic is int &&
+             data.creativityLevel is int &&
+             data.responseStyle in ['Concise', 'Detailed', 'Technical', 'Creative'] &&
+             data.userAlias is string &&
+             data.automation is map;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['displayName', 'email', 'role', 'createdAt']) &&
+             data.keys().hasOnly(['displayName', 'email', 'role', 'createdAt']) &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 200 &&
+             data.email is string && data.email.size() >= 5 && data.email.size() <= 256 &&
+             data.role in ['admin', 'user'] &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['title', 'message', 'type', 'timestamp', 'read']) &&
+             data.keys().hasOnly(['title', 'message', 'type', 'timestamp', 'read']) &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+             data.message is string && data.message.size() >= 1 && data.message.size() <= 1000 &&
+             data.type in ['offer', 'system', 'hr'] &&
+             data.timestamp is timestamp &&
+             data.read is bool;
+    }
+
+    function isValidSession(data) {
+      return data.keys().hasAll(['title', 'createdAt']) &&
+             data.keys().hasOnly(['title', 'createdAt']) &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['text', 'sender', 'timestamp']) &&
+             data.keys().hasOnly(['text', 'sender', 'timestamp']) &&
+             data.text is string && data.text.size() >= 1 && data.text.size() <= 5000 &&
+             data.sender in ['user', 'genie'] &&
+             data.timestamp is timestamp;
+    }
+
+    function isValidAvatarSettings(data) {
+      return data.keys().hasAll(['mode', 'autoResponseEnabled']) &&
+             data.mode in ['Assist', 'Shadow', 'Delegated', 'Safe'] &&
+             data.autoResponseEnabled is bool;
+    }
+
+    function isValidAvatarAction(data) {
+      return data.keys().hasAll(['type', 'summary', 'timestamp', 'status']) &&
+             data.type is string && data.summary is string &&
+             data.timestamp is timestamp &&
+             data.status in ['completed', 'escalated', 'pending'];
+    }
+
+    function isValidTask(data) {
+      return data.keys().hasAll(['title', 'assignee', 'priority', 'status', 'createdAt']) &&
+             data.keys().hasOnly(['title', 'assignee', 'priority', 'status', 'createdAt', 'updatedAt', 'remarks']) &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 500 &&
+             data.assignee is string && data.assignee.size() >= 1 && data.assignee.size() <= 200 &&
+             data.priority in ['Low', 'Medium', 'High'] &&
+             data.status in ['To Do', 'In Progress', 'Completed'] &&
+             data.createdAt is timestamp &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp) &&
+             (!('remarks' in data) || (data.remarks is string && data.remarks.size() <= 5000));
+    }
+
+    function isValidActivity(data) {
+      return data.keys().hasAll(['type', 'message', 'timestamp']) &&
+             data.keys().hasOnly(['type', 'message', 'timestamp']) &&
+             data.type in ['ai', 'system', 'intelligence', 'campaign'] &&
+             data.message is string && data.message.size() >= 1 && data.message.size() <= 1000 &&
+             data.timestamp is timestamp;
+    }
+
+    function isValidFollowUp(data) {
+      return data.keys().hasAll(['targetName', 'targetEmail', 'scheduledAt', 'createdBy', 'createdAt', 'status']) &&
+             data.keys().hasOnly(['targetName', 'targetEmail', 'targetRole', 'scheduledAt', 'notes', 'createdBy', 'creatorEmail', 'createdAt', 'status']) &&
+             data.targetName is string && data.targetName.size() >= 1 && data.targetName.size() <= 200 &&
+             data.targetEmail is string && data.targetEmail.size() >= 5 && data.targetEmail.size() <= 256 &&
+             data.scheduledAt is timestamp &&
+             data.createdBy == request.auth.uid &&
+             data.createdAt == request.time &&
+             data.status in ['pending', 'completed', 'cancelled'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /followups/{followupId} {
+      allow read: if isAuthenticated() && (resource.data.createdBy == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && isValidFollowUp(request.resource.data);
+      allow update: if isAuthenticated() && (resource.data.createdBy == request.auth.uid || isAdmin()) && isValidFollowUp(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidTask(request.resource.data);
+      allow update: if isAuthenticated() && isValidTask(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /activities/{activityId} {
+      allow read: if isAuthenticated();
+      // Only authenticated users can log activities, potentially restrict further if needed
+      allow create: if isAuthenticated() && isValidActivity(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin(); // Only admins can list users
+
+      allow create: if isValidId(userId) && isOwner(userId) && isValidUser(request.resource.data) && (
+        request.resource.data.role == 'user' || 
+        ((request.auth.token.email.lower() == "upendra.raghav@divyanshicapital.com" || request.auth.token.email.lower() == "u.raghav003@gmail.com") && request.auth.token.email_verified == true)
+      );
+
+      allow update: if isValidId(userId) && (
+        isAdmin() || 
+        (isOwner(userId) && 
+         isValidUser(request.resource.data) && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName']))
+      );
+
+      allow delete: if isAdmin(); // Only admins can delete users
+      
+      match /config/{configId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+
+      match /notifications/{notificationId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if (isOwner(userId) || isAdmin()) && isValidNotification(request.resource.data);
+        allow update: if (isOwner(userId) || isAdmin()) && isValidNotification(request.resource.data);
+        allow delete: if isOwner(userId) || isAdmin();
+      }
+
+      match /sessions/{sessionId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if (isOwner(userId) || isAdmin()) && isValidSession(request.resource.data);
+        allow update: if (isOwner(userId) || isAdmin()) && isValidSession(request.resource.data);
+        allow delete: if (isOwner(userId) || isAdmin());
+
+        match /messages/{messageId} {
+          allow read: if isOwner(userId) || isAdmin();
+          allow create: if (isOwner(userId) || isAdmin()) && isValidMessage(request.resource.data);
+          allow update: if (isOwner(userId) || isAdmin()) && isValidMessage(request.resource.data);
+          allow delete: if (isOwner(userId) || isAdmin());
+        }
+      }
+
+      match /avatar/settings {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+
+      match /avatar/actions/{actionId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if (isOwner(userId) || isAdmin()) && isValidAvatarAction(request.resource.data);
+      }
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
