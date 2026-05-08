@@ -68,7 +68,7 @@ export function Layout({ user }: LayoutProps) {
       case 'avatar-control': return <AvatarControl />;
       case 'integrations': return <Integrations />;
       case 'settings': return <UserSettings user={user} />;
-      default: return <Dashboard />;
+      default: return <Dashboard setActiveTab={setActiveTab} />;
     }
   };
 

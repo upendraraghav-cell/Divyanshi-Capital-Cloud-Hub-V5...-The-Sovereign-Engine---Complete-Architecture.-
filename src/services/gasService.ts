@@ -1,46 +1,41 @@
 
 import { toast } from 'sonner';
+import { request } from '@/lib/api';
 
 /**
  * SOVEREIGN SUPREME ENGINE - NEURAL BRIDGE
  * Interfaces with the Google Apps Script V3 Backend
  */
 
-const GAS_URL = import.meta.env.VITE_GAS_BASE_URL;
-const GAS_HANDSHAKE_URL = import.meta.env.VITE_GAS_HANDSHAKE_URL;
-const GAS_P1_URL = import.meta.env.VITE_GAS_P1_URL;
-const GAS_V2_URL = import.meta.env.VITE_GAS_V2_URL;
-const GAS_API_KEY = import.meta.env.VITE_GAS_API_KEY;
-
-const getUrlWithKey = (url: string = GAS_URL) => {
-  if (!GAS_API_KEY) return url;
-  return url.includes('?') ? `${url}&apiKey=${GAS_API_KEY}` : `${url}?apiKey=${GAS_API_KEY}`;
-};
 
 /**
- * Helper to call the secure proxy
+ * Helper to call the secure proxy using centralized request utility
  */
 async function callProxy(action: string, payload: any = {}): Promise<GasResponse> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 7000); // 7s neural timeout
 
   try {
-    const response = await fetch('/api/gas/proxy', {
+    const data = await request<GasResponse>('/api/gas/proxy', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, ...payload }),
       signal: controller.signal
     });
     clearTimeout(timeoutId);
-    return await response.json();
+    return data;
   } catch (error: any) {
     clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      console.debug(`[Neural Bridge] Protocol ${action} timed out. Proceeding with cache fallback.`);
-      return { ok: false, error: "Link timed out." };
+    
+    // Custom error handling for specific cases if needed
+    if (error.message.includes('aborted')) {
+      console.debug(`[Neural Bridge] Protocol ${action} timed out.`);
+      return { ok: false, error: "Link timed out. Registry node unresponsive." };
     }
-    console.error(`[Proxy Error] ${action}:`, error);
-    return { ok: false, error: "Neural link fractured. Ensure the SaaS Bridge is healthy." };
+    
+    return { 
+      ok: false, 
+      error: error.message || "Neural link fractured. Ensure the SaaS Bridge is healthy." 
+    };
   }
 }
 

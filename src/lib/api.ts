@@ -19,30 +19,80 @@ export type BackendRoute =
   | "GET_BULBUL_INTELLIGENCE"
   | "GET_DRIVE_ASSETS";
 
+/**
+ * Standard API Response structure
+ */
+export interface ApiResponse<T = any> {
+  ok: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+  details?: any;
+}
+
+/**
+ * Robust fetch wrapper with automatic error handling and toast notifications
+ */
+export async function request<T>(
+  url: string, 
+  options: RequestInit = {}, 
+  silent: boolean = false
+): Promise<T> {
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+
+    let data: any;
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      data = await response.json();
+    } else {
+      data = { message: await response.text() };
+    }
+
+    if (!response.ok) {
+      const errorMsg = data?.error || data?.message || `Request failed with status ${response.status}`;
+      if (!silent) {
+        toast.error(errorMsg, {
+          description: "Neural Matrix Alert",
+          duration: 4000
+        });
+      }
+      throw new Error(errorMsg);
+    }
+
+    return data as T;
+  } catch (error: any) {
+    console.error(`[Neural Bridge] API Error: ${url}`, error);
+    if (!silent && !error.message.includes('aborted')) {
+      toast.error("Network Connectivity Issue", {
+        description: error.message || "Could not reach HQ servers.",
+        duration: 5000
+      });
+    }
+    throw error;
+  }
+}
+
 export async function callBackend<T>(route: BackendRoute, payload: any = {}): Promise<T> {
   console.log(`Calling SaaS backend route: ${route}`, payload);
   
   try {
-    const response = await fetch(BACKEND_URL, {
+    return await request<T>(BACKEND_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ 
         api: route,
         route: route, 
         ...payload 
       }),
     });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data as T;
   } catch (error) {
-    console.error(`Error calling backend route ${route}:`, error);
+    console.warn(`[Neural Bridge] Redirecting ${route} to Local Cache...`);
     return getMockData(route) as T;
   }
 }

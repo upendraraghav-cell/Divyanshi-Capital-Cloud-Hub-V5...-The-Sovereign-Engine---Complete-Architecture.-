@@ -91,11 +91,11 @@ interface AIConfig {
   primaryModel: 'LAILA' | 'BULBHUL' | 'SARI';
   personalityTraits: string[];
   coreInstructions: string;
-  brandTone: 'Professional' | 'Enthusiastic' | 'Aggressive' | 'Empathetic' | 'Witty & Loyal';
+  brandTone: 'Professional' | 'Enthusiastic' | 'Aggressive' | 'Empathetic' | 'Witty & Loyal' | 'Loyal Assistant';
   loyaltyLevel: number; // 0-100
   workEthic: number; // 0-100
   creativityLevel: number; // 0-100
-  responseStyle: 'Concise' | 'Detailed' | 'Technical' | 'Creative';
+  responseStyle: 'Concise' | 'Detailed' | 'Technical' | 'Creative' | 'Empathetic';
   userAlias: string;
   automation: {
     autoCalling: boolean;
@@ -207,10 +207,10 @@ export function AICenter({ user }: AICenterProps) {
       toast.success(`Priority alert broadcasted to dashboard.`);
       setSystemLogs(prev => [{ 
         id: `status-alert-${Date.now()}-${Math.random()}`, 
-        msg: `STATUS: Broadcast sent: ${args.title}`, 
+        message: `STATUS: Broadcast sent: ${args.title}`, 
         type: "system", 
-        time: new Date().toLocaleTimeString() 
-      }, ...prev]);
+        timestamp: new Date() 
+      } as AIActivity, ...prev]);
     } catch (err) {
       handleFirestoreError(err, OperationType.CREATE, `users/${auth.currentUser.uid}/notifications`);
     }
@@ -236,7 +236,7 @@ export function AICenter({ user }: AICenterProps) {
       };
       setMessages(prev => [...prev, { id: `user-${Date.now()}`, role: 'user', parts: [{ text: input }] }, refusal] as Message[]);
       setInput('');
-      setSystemLogs(prev => [{ id: `sec-${Date.now()}-${Math.random()}`, msg: "SECURITY: Loyalty Violation Blocked", type: "system", time: new Date().toLocaleTimeString() }, ...prev]);
+      setSystemLogs(prev => [{ id: `sec-${Date.now()}-${Math.random()}`, message: "SECURITY: Loyalty Violation Blocked", type: "system", timestamp: new Date() } as AIActivity, ...prev]);
       toast.error("Loyalty Matrix Triggered: Request Blocked");
       return;
     }
@@ -298,7 +298,7 @@ export function AICenter({ user }: AICenterProps) {
                 createdBy: user?.personalFileId || 'AI_KERNEL'
               });
               toast.success(`Task "${args.title}" created via ${selectedModel.persona} Matrix.`);
-              setSystemLogs(prev => [{ id: `sync-task-${Date.now()}-${Math.random()}`, msg: `SYNC: Task '${args.title}' injected to Matrix`, type: "sync", time: new Date().toLocaleTimeString() }, ...prev]);
+              setSystemLogs(prev => [{ id: `sync-task-${Date.now()}-${Math.random()}`, message: `SYNC: Task '${args.title}' injected to Matrix`, type: "ai", timestamp: new Date() } as AIActivity, ...prev]);
             } catch (err) {
               handleFirestoreError(err, OperationType.CREATE, 'tasks');
             }

@@ -13,8 +13,18 @@ import "dotenv/config";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const GAS_URL = process.env.VITE_GAS_P1_URL || process.env.VITE_GAS_BASE_URL || "https://script.google.com/macros/s/AKfycbw8JfQeC8Yz3vIYASjH6sBYz_aYyzbZh9_ANRcm4NCzjZJgCmdFHTmxsakAfyOpf0AmHg/exec";
-const GAS_API_KEY = process.env.VITE_GAS_API_KEY || process.env.GAS_API_KEY;
+// SOVEREIGN P1 REGISTRY - MASTER ENTITY MAP
+const P1_REGISTRY = {
+    MASTER_ID: "1Mk9AzGdKK07WZCKV6lZgtlM4JWy2sdESQwh70r0UicU",
+    HR_ID: "1xR-UyH8LXvAEacGXL8ZQA7nS7hJds2zlMtzxr6iiuGs",
+    SALES_ID: "1SaFxHICu3GN6Udhxb4hW81RagBpAP-91En-tlNYiKl4",
+    SARI_INTEL_ID: "1ru_EBflLmasLfZ7TBIpMp8xyKuHsX9QnQod3X5FZchHT4JHx3aiEuxEMHAI",
+    STAFF_HUB_ID: "1Brbw5UDkhG01ABD5L0hQqMUtOeAH8w3k2F-HbMwfOo0",
+    DEFAULT_GAS_URL: "https://script.google.com/macros/s/AKfycbw8JfQeC8Yz3vIYASjH6sBYz_aYyzbZh9_ANRcm4NCzjZJgCmdFHTmxsakAfyOpf0AmHg/exec"
+};
+
+const GAS_URL = process.env.VITE_GAS_P1_URL || process.env.VITE_GAS_BASE_URL || process.env.GAS_URL || P1_REGISTRY.DEFAULT_GAS_URL;
+const GAS_API_KEY = process.env.VITE_GAS_API_KEY || process.env.GAS_API_KEY || "MALLIK_V3_786";
 
 function GET_GEMINI_MODEL() {
   const key = process.env.GEMINI_API_KEY_SARI;
@@ -34,11 +44,16 @@ async function startServer() {
 
   app.use(express.json());
 
-  // Logging Middleware
+  // Logging Middleware with enhanced telemetry
   app.use((req, res, next) => {
-    if (req.path.startsWith('/api')) {
-      console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-    }
+    const start = Date.now();
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      if (req.path.startsWith('/api')) {
+        const statusColor = res.statusCode >= 400 ? '\x1b[31m' : '\x1b[32m';
+        console.log(`[Neural Telemetry] ${statusColor}${res.statusCode}\x1b[0m | ${req.method} ${req.path} (${duration}ms)`);
+      }
+    });
     next();
   });
 
@@ -264,12 +279,16 @@ async function startServer() {
 
   // API Routes
   app.post("/api/ai/chat", async (req, res) => {
-    const { message, history: rawHistory, persona, userRole } = req.body;
-    const history = Array.isArray(rawHistory) ? rawHistory : [];
-    
-    console.log(`[AI Chat] Persona: ${persona}, Role: ${userRole}, History Length: ${history.length}`);
-
     try {
+      const { message, history: rawHistory, persona, userRole } = req.body;
+      const history = Array.isArray(rawHistory) ? rawHistory : [];
+      
+      console.log(`[AI Chat] Persona: ${persona}, Role: ${userRole}, History Length: ${history.length}`);
+      
+      if (!message) {
+        return res.status(400).json({ ok: false, error: "Empty command vector detected." });
+      }
+
       let systemInstruction = "";
       
       switch(persona) {
@@ -322,18 +341,27 @@ async function startServer() {
         }
       });
     } catch (error: any) {
-      console.error("AI Route Error:", error);
-      res.status(500).json({ ok: false, error: error.message || "AI processing failed" });
+      console.error("[SARI Critical] AI Controller Error:", error);
+      res.status(500).json({ 
+        ok: false, 
+        error: "SARI AI Link Interrupted", 
+        message: error.message || "The neural matrix encountered an unexpected vector collision.",
+        node: "DC_AI_GW_01" 
+      });
     }
   });
 
   app.post("/api/backend", async (req, res) => {
-    const { api, route, ...payload } = req.body;
-    const task = api || route;
-
-    console.log(`Backend handling task: ${task}`, payload);
-
     try {
+      const { api, route, ...payload } = req.body;
+      const task = api || route;
+
+      if (!task) {
+        return res.status(400).json({ ok: false, error: "Task vector undefined." });
+      }
+
+      console.log(`Backend handling task: ${task}`, payload);
+
       switch (task) {
         case "GET_DASHBOARD":
           res.json({
@@ -358,11 +386,11 @@ async function startServer() {
           break;
 
         default:
-          res.status(404).json({ ok: false, error: "Route not found in SaaS backend" });
+          res.status(404).json({ ok: false, error: "Protocol Error", message: `SaaS Controller does not recognize task: ${task}` });
       }
-    } catch (error) {
-      console.error("Backend Error:", error);
-      res.status(500).json({ ok: false, error: "Internal Server Error" });
+    } catch (error: any) {
+      console.error("[Neural Backend] Sector Failure:", error);
+      res.status(500).json({ ok: false, error: "Internal System Error", message: error.message });
     }
   });
 
@@ -537,9 +565,9 @@ async function startServer() {
     const isAppsScript = userAgent.includes('Google-Apps-Script');
     
     // Hardcoded P1 Correct IDs (Per AGENTS.md Directive) - Overridable by Env
-    const P1_MASTER_ID = process.env.P1_MASTER_ID || "1Mk9AzGdKK07WZCKV6lZgtlM4JWy2sdESQwh70r0UicU";
-    const HR_MATRIX_ID = process.env.HR_MATRIX_ID || "1xR-UyH8LXvAEacGXL8ZQA7nS7hJds2zlMtzxr6iiuGs";
-    const SALES_LOG_ID = process.env.SALES_LOG_ID || "1SaFxHICu3GN6Udhxb4hW81RagBpAP-91En-tlNYiKl4";
+    const P1_MASTER_ID = process.env.P1_MASTER_ID || P1_REGISTRY.MASTER_ID;
+    const HR_MATRIX_ID = process.env.HR_MATRIX_ID || P1_REGISTRY.HR_ID;
+    const SALES_LOG_ID = process.env.SALES_LOG_ID || P1_REGISTRY.SALES_ID;
 
     let targetFileId = P1_MASTER_ID;
     let routingStatus = "PROCESSED";
@@ -719,13 +747,17 @@ async function startServer() {
 
   // Proxy for Google Apps Script to maintain security of VITE_GAS_API_KEY
   app.post("/api/gas/proxy", async (req, res) => {
-    const { action, ...payload } = req.body;
-    
-    if (!GAS_URL) {
-      return res.status(500).json({ ok: false, error: "Neural Link (GAS_URL) not configured in environment." });
-    }
-
     try {
+      const { action, ...payload } = req.body;
+      
+      if (!GAS_URL) {
+        return res.status(500).json({ ok: false, error: "Neural Link (GAS_URL) not configured in environment." });
+      }
+
+      if (!action) {
+        return res.status(400).json({ ok: false, error: "Action parameter is missing from the request." });
+      }
+
       const fetchUrl = GAS_API_KEY 
         ? (GAS_URL.includes('?') ? `${GAS_URL}&apiKey=${GAS_API_KEY}` : `${GAS_URL}?apiKey=${GAS_API_KEY}`)
         : GAS_URL;
@@ -742,13 +774,34 @@ async function startServer() {
         })
       });
 
+      if (!response.ok) {
+        return res.status(response.status).json({ 
+          ok: false, 
+          error: `Registry node returned ${response.status}`,
+          message: "The Sovereign Hub refused the connection or encountered an internal error." 
+        });
+      }
+
       const text = await response.text();
       let data: any;
-      try { data = JSON.parse(text); } catch { return res.status(502).json({ ok: false, error: "GAS returned invalid response. Check deployment is set to 'Anyone'.", raw_preview: text.substring(0, 300) }); }
+      try { 
+        data = JSON.parse(text); 
+      } catch { 
+        return res.status(502).json({ 
+          ok: false, 
+          error: "Invalid Registry Payload",
+          message: "The response from the Apps Script Hub was not valid JSON. Ensure deployment access is set to 'Anyone'.", 
+          raw_preview: text.substring(0, 300) 
+        }); 
+      }
       res.json(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error("[Neural Proxy] Link Severed:", error);
-      res.status(500).json({ ok: false, error: "Neural Link Severed. Verify Apps Script Webhook URL is 'Public'." });
+      res.status(500).json({ 
+        ok: false, 
+        error: "Neural Link Severed", 
+        message: "Could not establish a connection to the Sovereign Hub. verify your internet connection or HQ server status." 
+      });
     }
   });
 
