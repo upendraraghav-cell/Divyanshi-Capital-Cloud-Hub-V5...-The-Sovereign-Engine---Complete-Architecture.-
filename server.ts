@@ -13,8 +13,8 @@ import "dotenv/config";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbw8JfQeC8Yz3vIYASjH6sBYz_aYyzbZh9_ANRcm4NCzjZJgCmdFHTmxsakAfyOpf0AmHg/exec";
-const GAS_API_KEY = process.env.VITE_GAS_API_KEY;
+const GAS_URL = process.env.VITE_GAS_P1_URL || process.env.VITE_GAS_BASE_URL || "https://script.google.com/macros/s/AKfycbw8JfQeC8Yz3vIYASjH6sBYz_aYyzbZh9_ANRcm4NCzjZJgCmdFHTmxsakAfyOpf0AmHg/exec";
+const GAS_API_KEY = process.env.VITE_GAS_API_KEY || process.env.GAS_API_KEY;
 
 async function startServer() {
   const app = express();
@@ -31,14 +31,37 @@ async function startServer() {
   });
 
   // Health Check
-  app.get("/api/health", (req, res) => {
+  app.get("/api/health", async (req, res) => {
+    let gasStatus = "OFFLINE";
+    if (GAS_URL && GAS_API_KEY) {
+      try {
+        const fetchUrl = GAS_URL.includes('?') ? `${GAS_URL}&apiKey=${GAS_API_KEY}` : `${GAS_URL}?apiKey=${GAS_API_KEY}`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+        const response = await fetch(fetchUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'HEARTBEAT' }),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+        if (response.ok) {
+          gasStatus = "CONNECTED";
+        } else {
+          gasStatus = "RESTRICTED";
+        }
+      } catch (e) {
+        gasStatus = "REACHABLE_BUT_AUTH_ERROR";
+      }
+    }
+
     res.json({ 
       ok: true, 
       timestamp: new Date().toISOString(), 
       status: "Neural Matrix Online",
       version: "2.0.0-SaaS-Controller",
       engine: "Neural Bridge V2",
-      auth: GAS_API_KEY ? "CONNECTED" : "RESTRICTED"
+      auth: gasStatus
     });
   });
 
@@ -549,14 +572,11 @@ async function startServer() {
     console.log(`[Neural Bridge] ${routingStatus} | Target: ${targetFileId.substring(0, 8)}...`);
 
     // Forward Sync to Sovereign Apps Script Backend
-    const GAS_P1_URL = process.env.VITE_GAS_P1_URL || GAS_URL;
-
-    if (GAS_URL) {
-      try {
-        const targetUrl = (payload.form_name === 'HR' || payload.type === 'HR_ENTRY') ? GAS_P1_URL : GAS_URL;
-        const fetchUrl = GAS_API_KEY 
-          ? (targetUrl.includes('?') ? `${targetUrl}&apiKey=${GAS_API_KEY}` : `${targetUrl}?apiKey=${GAS_API_KEY}`)
-          : targetUrl;
+    try {
+      const targetUrl = (payload.form_name === 'HR' || payload.type === 'HR_ENTRY') ? GAS_URL : GAS_URL; // GAS_URL now has the P1 fallback
+      const fetchUrl = GAS_API_KEY 
+        ? (targetUrl.includes('?') ? `${targetUrl}&apiKey=${GAS_API_KEY}` : `${targetUrl}?apiKey=${GAS_API_KEY}`)
+        : targetUrl;
 
         fetch(fetchUrl, {
           method: 'POST',
@@ -574,7 +594,6 @@ async function startServer() {
       } catch (e) {
         console.warn("GAS Connection Failed");
       }
-    }
 
     res.json({ 
       ok: true, 
@@ -589,8 +608,6 @@ async function startServer() {
     // GET Recent Webhooks for Frontend Sync Visualization
     app.get("/api/mis/sync", async (req, res) => {
       console.log("Neural Bridge: Triggering P1 Master Sync...");
-      const GAS_URL = process.env.VITE_GAS_P1_URL || process.env.VITE_GAS_BASE_URL;
-      const GAS_API_KEY = process.env.VITE_GAS_API_KEY;
 
       if (!GAS_URL) {
         return res.json({ 
@@ -619,7 +636,9 @@ async function startServer() {
 
         if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
         
-        const data = await response.json();
+        const text = await response.text();
+        let data: any;
+        try { data = JSON.parse(text); } catch { return res.json({ ok: true, updatedLeads: 0, conflictsResolved: 0, warning: "P1 Master returned invalid response. Check GAS deployment access." }); }
         if (data.ok) {
           console.log(`[P1 Sync] Success: ${data.stats?.totalLeads || 0} leads recalibrated.`);
           res.json({ 
@@ -643,9 +662,6 @@ async function startServer() {
     });
 
     app.get("/api/gas/registry-sync", async (req, res) => {
-      const GAS_URL = process.env.VITE_GAS_P1_URL || process.env.VITE_GAS_BASE_URL;
-      const GAS_API_KEY = process.env.VITE_GAS_API_KEY;
-
       if (!GAS_URL) return res.json({ ok: true, status: "SIMULATED_LOCAL" });
 
       try {
@@ -659,7 +675,9 @@ async function startServer() {
           body: JSON.stringify({ action: 'HEARTBEAT' })
         });
         
-        const data = await response.json();
+        const text = await response.text();
+        let data: any;
+        try { data = JSON.parse(text); } catch { return res.json({ ok: false, status: "DISCONNECTED", error: "Registry Hub returned invalid response." }); }
         res.json({ ok: true, status: "LIVE_CONNECTED", latency: data.latency || '24ms' });
       } catch (e) {
         res.json({ ok: false, status: "DISCONNECTED", error: "Registry Hub Unreachable" });
@@ -673,17 +691,15 @@ async function startServer() {
   // Proxy for Google Apps Script to maintain security of VITE_GAS_API_KEY
   app.post("/api/gas/proxy", async (req, res) => {
     const { action, ...payload } = req.body;
-    const targetGasUrl = process.env.VITE_GAS_P1_URL || process.env.VITE_GAS_BASE_URL || GAS_URL;
-    const GAS_API_KEY = process.env.VITE_GAS_API_KEY;
     
-    if (!targetGasUrl) {
+    if (!GAS_URL) {
       return res.status(500).json({ ok: false, error: "Neural Link (GAS_URL) not configured in environment." });
     }
 
     try {
       const fetchUrl = GAS_API_KEY 
-        ? (targetGasUrl.includes('?') ? `${targetGasUrl}&apiKey=${GAS_API_KEY}` : `${targetGasUrl}?apiKey=${GAS_API_KEY}`)
-        : targetGasUrl;
+        ? (GAS_URL.includes('?') ? `${GAS_URL}&apiKey=${GAS_API_KEY}` : `${GAS_URL}?apiKey=${GAS_API_KEY}`)
+        : GAS_URL;
 
       const response = await fetch(fetchUrl, {
         method: 'POST',
@@ -697,7 +713,9 @@ async function startServer() {
         })
       });
 
-      const data = await response.json();
+      const text = await response.text();
+      let data: any;
+      try { data = JSON.parse(text); } catch { return res.status(502).json({ ok: false, error: "GAS returned invalid response. Check deployment is set to 'Anyone'.", raw_preview: text.substring(0, 300) }); }
       res.json(data);
     } catch (error) {
       console.error("[Neural Proxy] Link Severed:", error);

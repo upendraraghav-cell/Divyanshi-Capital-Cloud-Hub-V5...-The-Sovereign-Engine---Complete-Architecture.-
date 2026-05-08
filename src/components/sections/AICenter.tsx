@@ -196,6 +196,26 @@ export function AICenter({ user }: AICenterProps) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  const sendNotification = async (args: { title: string; message: string; type: string }) => {
+    if (!auth.currentUser) return;
+    try {
+      await addDoc(collection(db, `users/${auth.currentUser.uid}/notifications`), {
+        ...args,
+        timestamp: serverTimestamp(),
+        read: false
+      });
+      toast.success(`Priority alert broadcasted to dashboard.`);
+      setSystemLogs(prev => [{ 
+        id: `status-alert-${Date.now()}-${Math.random()}`, 
+        msg: `STATUS: Broadcast sent: ${args.title}`, 
+        type: "system", 
+        time: new Date().toLocaleTimeString() 
+      }, ...prev]);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, `users/${auth.currentUser.uid}/notifications`);
+    }
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -284,17 +304,7 @@ export function AICenter({ user }: AICenterProps) {
             }
           }
           if (name === 'sendNotification' && auth.currentUser) {
-            try {
-              await addDoc(collection(db, `users/${auth.currentUser.uid}/notifications`), {
-                ...args,
-                timestamp: serverTimestamp(),
-                read: false
-              });
-              toast.success(`Priority alert broadcasted to dashboard.`);
-              setSystemLogs(prev => [{ id: `status-alert-${Date.now()}-${Math.random()}`, msg: `STATUS: Broadcast sent: ${args.title}`, type: "system", time: new Date().toLocaleTimeString() }, ...prev]);
-            } catch (err) {
-              handleFirestoreError(err, OperationType.CREATE, `users/${auth.currentUser.uid}/notifications`);
-            }
+            await sendNotification(args);
           }
         }
       }
@@ -616,10 +626,24 @@ export function AICenter({ user }: AICenterProps) {
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[9px] font-black text-emerald-500/80 uppercase tracking-[0.3em]">System Neural Log_v4.0</span>
             </div>
-            <div className="flex gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-white/5" />
-              <div className="w-2.5 h-2.5 rounded-full bg-white/5" />
-              <div className="w-2.5 h-2.5 rounded-full bg-white/5" />
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="xs" 
+                onClick={() => sendNotification({ 
+                  title: 'Maintenance Alert', 
+                  message: 'The P1 Master database will undergo scheduled maintenance tonight at 02:00 AM IST.', 
+                  type: 'system' 
+                })}
+                className="h-6 text-[8px] uppercase font-black bg-orange-500/10 border-orange-500/20 text-orange-500 hover:bg-orange-500 hover:text-white"
+              >
+                Dispatch Maintenance Alert
+              </Button>
+              <div className="flex gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-white/5" />
+                <div className="w-2.5 h-2.5 rounded-full bg-white/5" />
+                <div className="w-2.5 h-2.5 rounded-full bg-white/5" />
+              </div>
             </div>
           </div>
           <CardContent className="p-6 h-[200px] overflow-hidden font-mono text-[10px] flex flex-col-reverse gap-2">
