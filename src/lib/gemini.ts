@@ -100,7 +100,7 @@ export async function getSuperAGIResponse(
          - Use Hinglish phrases like "Boss, aaj sales phodne ka din hai!" or "Target achieved karke hi chain milega."`;
 
     const response = await getAi().models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-1.5-flash",
       contents: [...history, { role: "user", parts: [{ text: prompt }] }],
       config: {
         systemInstruction: systemInstruction,

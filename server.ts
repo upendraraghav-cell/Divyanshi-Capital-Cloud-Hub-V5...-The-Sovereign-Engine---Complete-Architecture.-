@@ -16,6 +16,18 @@ const __dirname = path.dirname(__filename);
 const GAS_URL = process.env.VITE_GAS_P1_URL || process.env.VITE_GAS_BASE_URL || "https://script.google.com/macros/s/AKfycbw8JfQeC8Yz3vIYASjH6sBYz_aYyzbZh9_ANRcm4NCzjZJgCmdFHTmxsakAfyOpf0AmHg/exec";
 const GAS_API_KEY = process.env.VITE_GAS_API_KEY || process.env.GAS_API_KEY;
 
+function GET_GEMINI_MODEL() {
+  const key = process.env.GEMINI_API_KEY_SARI;
+  if (!key) throw new Error("Missing GEMINI_API_KEY_SARI in .env");
+  return {
+    model: "gemini-1.5-pro",       // force Pro model
+    apiKey: key,                   // bound to upendra.raghav@divyanshicapital.com
+    sandbox: true,                 // dry_run before production
+    audit: "SARI-GEMINI-LINK",     // audit log tag
+    tenant: "DivyanshiCapital"     // tenant isolation marker
+  };
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -171,9 +183,23 @@ async function startServer() {
   `;
 
   // Initialize Gemini AI with Hybrid Key Logic (MD Directive: Free Tier First)
+  let sariConfig: any = null;
+  try {
+    sariConfig = GET_GEMINI_MODEL();
+  } catch (e) {
+    console.warn("[Neural Bridge] SARI node inactive: " + (e as Error).message);
+  }
+
   const AI_KEYS = [
     { name: 'SYSTEM', key: process.env.GEMINI_API_KEY, model: "gemini-1.5-flash" },
-    { name: 'SARI_BOT', key: process.env.GEMINI_API_KEY_SARI, model: "gemini-1.5-flash" },
+    { 
+      name: 'SARI_BOT', 
+      key: sariConfig?.apiKey, 
+      model: sariConfig?.model || "gemini-1.5-flash",
+      sandbox: sariConfig?.sandbox,
+      audit: sariConfig?.audit,
+      tenant: sariConfig?.tenant
+    },
     { name: 'VITE_DEFAULT', key: process.env.VITE_GEMINI_API_KEY, model: "gemini-1.5-flash" },
     { name: 'GEMINI_API_KEY1', key: process.env.GEMINI_API_KEY1, model: "gemini-3-flash-preview" },
     { name: 'GEMINI_API_PRO', key: process.env.GEMINI_API_PRO, model: "gemini-3.1-pro-preview" }, 
@@ -201,6 +227,9 @@ async function startServer() {
     for (const config of sortedKeys) {
         try {
             console.log(`[Neural Bridge] Attempting AI with Node: ${config.name} (${config.model})`);
+            if (config.audit) {
+              console.log(`[Audit] node: ${config.name} | audit: ${config.audit} | tenant: ${config.tenant} | sandbox: ${config.sandbox}`);
+            }
             const ai = new GoogleGenAI({ apiKey: config.key! });
             
             const response = await ai.models.generateContent({

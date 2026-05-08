@@ -100,7 +100,7 @@ export class SariService {
     `;
     
     const response = await this.ai.models.generateContent({
-      model: "gemini-3.1-pro-preview",
+      model: "gemini-1.5-pro",
       contents: consensusPrompt,
     });
     return response.text;
@@ -147,7 +147,7 @@ export class SariService {
       `;
 
       const response = await this.ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-1.5-pro",
         contents: message,
         config: {
           systemInstruction: systemPrompt,
