@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Save, Send, User, Phone, Mail, MapPin, Building, IndianRupee, FileText, Plus, ChevronDown } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { gasService } from '@/services/gasService';
 import { toast } from 'sonner';
 
@@ -10,6 +12,7 @@ export const SmartForm: React.FC<{ user?: any }> = ({ user }) => {
 
   const [formData, setFormData] = useState({
     client_name: '',
+    mother_name: '',
     mobile: '',
     email: user?.email || '',
     city: '',
@@ -43,6 +46,7 @@ export const SmartForm: React.FC<{ user?: any }> = ({ user }) => {
         toast.success(`Payload Secure: Lead ${response.lid || ''} synchronized with HQ.`, { id: toastId });
         setFormData({
           client_name: '',
+          mother_name: '',
           mobile: '',
           email: user?.email || '',
           city: '',
@@ -68,6 +72,10 @@ export const SmartForm: React.FC<{ user?: any }> = ({ user }) => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -101,43 +109,59 @@ export const SmartForm: React.FC<{ user?: any }> = ({ user }) => {
             
             <div className="space-y-4">
               <div className="relative group">
-                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 transition-colors" />
-                <input 
+                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 z-10 transition-colors" />
+                <Input 
                   required
                   name="client_name"
                   placeholder="Full Legal Name"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-orange-500/50 transition-all font-medium"
+                  className="h-12 bg-slate-950 border-slate-800 rounded-xl pl-10 text-sm text-slate-200 placeholder:text-slate-700"
+                  value={formData.client_name}
                   onChange={handleChange}
                 />
               </div>
 
               <div className="relative group">
-                <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 transition-colors" />
-                <input 
+                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 z-10 transition-colors" />
+                <Input 
+                  required
+                  name="mother_name"
+                  placeholder="Mother's Name (Bank Unique ID)"
+                  className="h-12 bg-slate-950 border-slate-800 rounded-xl pl-10 text-sm text-slate-200 placeholder:text-slate-700"
+                  value={formData.mother_name}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="relative group">
+                <Phone size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 z-10 transition-colors" />
+                <Input 
                   required
                   name="mobile"
                   placeholder="Validated Mobile (10 Digits)"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-orange-500/50 transition-all font-mono"
+                  className="h-12 bg-slate-950 border-slate-800 rounded-xl pl-10 text-sm text-slate-200 placeholder:text-slate-700 font-mono"
+                  value={formData.mobile}
                   onChange={handleChange}
                 />
               </div>
 
               <div className="relative group">
-                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 transition-colors" />
-                <input 
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 z-10 transition-colors" />
+                <Input 
                   name="email"
                   placeholder="Primary Email Address"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-orange-500/50 transition-all"
+                  className="h-12 bg-slate-950 border-slate-800 rounded-xl pl-10 text-sm text-slate-200 placeholder:text-slate-700"
+                  value={formData.email}
                   onChange={handleChange}
                 />
               </div>
 
               <div className="relative group">
-                <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 transition-colors" />
-                <input 
+                <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 z-10 transition-colors" />
+                <Input 
                   name="city"
                   placeholder="Serving City"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-orange-500/50 transition-all"
+                  className="h-12 bg-slate-950 border-slate-800 rounded-xl pl-10 text-sm text-slate-200 placeholder:text-slate-700"
+                  value={formData.city}
                   onChange={handleChange}
                 />
               </div>
@@ -152,87 +176,93 @@ export const SmartForm: React.FC<{ user?: any }> = ({ user }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase font-bold text-slate-600 ml-2">Loan Type</label>
-                  <div className="relative">
-                    <select 
-                      name="loan_type"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-4 pr-10 text-sm text-slate-200 appearance-none focus:outline-none focus:border-orange-500/50 transition-all"
-                      onChange={handleChange}
-                    >
-                      <option>Personal Loan</option>
-                      <option>Business Loan</option>
-                      <option>Home Loan</option>
-                      <option>LAP (Loan Against Property)</option>
-                      <option>Credit Card</option>
-                      <option>Car Loan</option>
-                      <option>Education Loan</option>
-                      <option>Gold Loan</option>
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
-                  </div>
+                  <Select 
+                    value={formData.loan_type} 
+                    onValueChange={(val) => handleSelectChange('loan_type', val)}
+                  >
+                    <SelectTrigger className="h-12 bg-slate-950 border-slate-800 rounded-xl px-4 text-sm text-slate-200 w-full">
+                      <SelectValue placeholder="Select Loan Type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-800 text-slate-200">
+                      <SelectItem value="Personal Loan">Personal Loan</SelectItem>
+                      <SelectItem value="Business Loan">Business Loan</SelectItem>
+                      <SelectItem value="Home Loan">Home Loan</SelectItem>
+                      <SelectItem value="LAP (Loan Against Property)">LAP (Loan Against Property)</SelectItem>
+                      <SelectItem value="Credit Card">Credit Card</SelectItem>
+                      <SelectItem value="Car Loan">Car Loan</SelectItem>
+                      <SelectItem value="Education Loan">Education Loan</SelectItem>
+                      <SelectItem value="Gold Loan">Gold Loan</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
                   <label className="text-[10px] uppercase font-bold text-slate-600 ml-2">Preferred Bank</label>
-                  <div className="relative">
-                    <select 
-                      name="bank"
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-4 pr-10 text-sm text-slate-200 appearance-none focus:outline-none focus:border-orange-500/50 transition-all"
-                      onChange={handleChange}
-                    >
-                      <option>HDFC Bank</option>
-                      <option>ICICI Bank</option>
-                      <option>Axis Bank</option>
-                      <option>Kotak Mahindra</option>
-                      <option>SBI</option>
-                      <option>IDFC First</option>
-                      <option>Standard Chartered</option>
-                      <option>IndusInd Bank</option>
-                      <option>Bajaj Finserv</option>
-                      <option>Tata Capital</option>
-                    </select>
-                    <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
-                  </div>
+                  <Select 
+                    value={formData.bank} 
+                    onValueChange={(val) => handleSelectChange('bank', val)}
+                  >
+                    <SelectTrigger className="h-12 bg-slate-950 border-slate-800 rounded-xl px-4 text-sm text-slate-200 w-full">
+                      <SelectValue placeholder="Select Bank" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-900 border-slate-800 text-slate-200">
+                      <SelectItem value="HDFC Bank">HDFC Bank</SelectItem>
+                      <SelectItem value="ICICI Bank">ICICI Bank</SelectItem>
+                      <SelectItem value="Axis Bank">Axis Bank</SelectItem>
+                      <SelectItem value="Kotak Mahindra">Kotak Mahindra</SelectItem>
+                      <SelectItem value="SBI">SBI</SelectItem>
+                      <SelectItem value="IDFC First">IDFC First</SelectItem>
+                      <SelectItem value="Standard Chartered">Standard Chartered</SelectItem>
+                      <SelectItem value="IndusInd Bank">IndusInd Bank</SelectItem>
+                      <SelectItem value="Bajaj Finserv">Bajaj Finserv</SelectItem>
+                      <SelectItem value="Tata Capital">Tata Capital</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
               <div className="relative group">
-                <IndianRupee size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 transition-colors" />
-                <input 
+                <IndianRupee size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 z-10 transition-colors" />
+                <Input 
                   required
                   name="amount"
                   placeholder="Required Amount"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-orange-500/50 transition-all font-mono"
+                  className="h-12 bg-slate-950 border-slate-800 rounded-xl pl-10 text-sm text-slate-200 placeholder:text-slate-700 font-mono"
+                  value={formData.amount}
                   onChange={handleChange}
                 />
               </div>
 
               <div className="relative group">
-                <Building size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 transition-colors" />
-                <input 
+                <Building size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 z-10 transition-colors" />
+                <Input 
                   name="rm_mail"
                   placeholder="Relationship Manager ID"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-orange-500/50 transition-all"
+                  className="h-12 bg-slate-950 border-slate-800 rounded-xl pl-10 text-sm text-slate-200 placeholder:text-slate-700"
+                  value={formData.rm_mail}
                   onChange={handleChange}
                 />
               </div>
 
               <div className="relative group">
-                <FileText size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 transition-colors" />
-                <input 
+                <FileText size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 z-10 transition-colors" />
+                <Input 
                   name="docs_link"
                   placeholder="Master Doc Link (G-Drive/P1)"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-orange-500/50 transition-all"
+                  className="h-12 bg-slate-950 border-slate-800 rounded-xl pl-10 text-sm text-slate-200 placeholder:text-slate-700"
+                  value={formData.docs_link}
                   onChange={handleChange}
                 />
               </div>
 
               {formType === 'HR' && (
                 <div className="relative group">
-                  <Plus size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 transition-colors" />
-                  <input 
+                  <Plus size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-orange-500 z-10 transition-colors" />
+                  <Input 
                     name="resume_link"
                     placeholder="Resume Matrix Link"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-slate-200 placeholder:text-slate-700 focus:outline-none focus:border-orange-500/50 transition-all font-mono"
+                    className="h-12 bg-slate-950 border-slate-800 rounded-xl pl-10 text-sm text-slate-200 placeholder:text-slate-700"
+                    value={(formData as any).resume_link || ''}
                     onChange={handleChange}
                   />
                 </div>

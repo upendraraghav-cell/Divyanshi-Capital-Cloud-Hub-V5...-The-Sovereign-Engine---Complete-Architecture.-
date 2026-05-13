@@ -15,6 +15,8 @@ import {
   Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,15 +32,20 @@ export function EnquiryForm({ user }: { user: any }) {
     emp_code: user?.empCode || '',
     sales_name: user?.name || '',
     client_name: '',
+    mother_name: '',
     mobile: '',
     email: '',
     city: '',
-    loan_type: '',
+    loan_type: 'Personal Loan',
     amount: '',
     preferred_bank: '',
-    employment_type: '',
+    employment_type: 'Salaried',
     remarks: ''
   });
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +105,7 @@ export function EnquiryForm({ user }: { user: any }) {
     setFormData({
       ...formData,
       client_name: "Amit Malhotra",
+      mother_name: "Suman Malhotra",
       mobile: "9812345678",
       email: "amit.m@gmail.com",
       city: "Delhi",
@@ -142,25 +150,29 @@ export function EnquiryForm({ user }: { user: any }) {
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Entry Type</label>
-              <select 
-                className="w-full h-12 bg-black/20 border border-white/5 rounded-2xl px-4 text-xs text-white outline-none focus:border-orange-500/50 transition-all"
-                value={formData.entry_type}
-                onChange={(e) => setFormData({...formData, entry_type: e.target.value})}
+              <Select 
+                value={formData.entry_type} 
+                onValueChange={(val) => handleSelectChange('entry_type', val)}
               >
-                <option value="STAFF_ENTRY">Staff Entry</option>
-                <option value="SALES_LEAD">Sales Lead</option>
-                <option value="CLIENT_ENTRY">Client Entry</option>
-                <option value="VISITOR_ENTRY">Visitor Entry</option>
-                <option value="BANKER_ENTRY">Banker Entry</option>
-              </select>
+                <SelectTrigger className="h-12 bg-black/20 border-white/5 rounded-2xl px-4 text-xs text-white">
+                  <SelectValue placeholder="Select Entry Type" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-900 border-white/5 text-white">
+                  <SelectItem value="STAFF_ENTRY">Staff Entry</SelectItem>
+                  <SelectItem value="SALES_LEAD">Sales Lead</SelectItem>
+                  <SelectItem value="CLIENT_ENTRY">Client Entry</SelectItem>
+                  <SelectItem value="VISITOR_ENTRY">Visitor Entry</SelectItem>
+                  <SelectItem value="BANKER_ENTRY">Banker Entry</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Source Agent</label>
               <div className="relative">
-                <input 
+                <Input 
                   type="text"
-                  className="w-full h-12 bg-black/20 border border-white/5 rounded-2xl px-10 text-xs text-white outline-none font-bold"
+                  className="h-12 bg-black/20 border-white/5 rounded-2xl pl-10 text-xs text-white font-bold"
                   value={`${formData.sales_name} (${formData.emp_code})`}
                   disabled
                 />
@@ -171,9 +183,8 @@ export function EnquiryForm({ user }: { user: any }) {
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Full Name *</label>
               <div className="relative">
-                <input 
-                  type="text"
-                  className="w-full h-12 bg-white/[0.03] border border-white/10 rounded-2xl px-10 text-xs text-white outline-none focus:border-orange-500/50 transition-all"
+                <Input 
+                  className="h-12 bg-white/[0.03] border-white/10 rounded-2xl pl-10 text-xs text-white"
                   placeholder="Enter client name"
                   value={formData.client_name}
                   onChange={(e) => setFormData({...formData, client_name: e.target.value})}
@@ -183,11 +194,23 @@ export function EnquiryForm({ user }: { user: any }) {
             </div>
 
             <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Mother's Name *</label>
+              <div className="relative">
+                <Input 
+                  className="h-12 bg-white/[0.03] border-white/10 rounded-2xl pl-10 text-xs text-white"
+                  placeholder="Mother's Name for Bank KYC"
+                  value={formData.mother_name}
+                  onChange={(e) => setFormData({...formData, mother_name: e.target.value})}
+                />
+                <User className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Mobile Number *</label>
               <div className="relative">
-                <input 
-                  type="text"
-                  className="w-full h-12 bg-white/[0.03] border border-white/10 rounded-2xl px-10 text-xs text-white outline-none focus:border-orange-500/50 transition-all"
+                <Input 
+                  className="h-12 bg-white/[0.03] border-white/10 rounded-2xl pl-10 text-xs text-white"
                   placeholder="10 digit mobile"
                   value={formData.mobile}
                   onChange={(e) => setFormData({...formData, mobile: e.target.value})}
@@ -199,9 +222,9 @@ export function EnquiryForm({ user }: { user: any }) {
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
               <div className="relative">
-                <input 
+                <Input 
                   type="email"
-                  className="w-full h-12 bg-white/[0.03] border border-white/10 rounded-2xl px-10 text-xs text-white outline-none focus:border-orange-500/50 transition-all hover:bg-white/[0.05]"
+                  className="h-12 bg-white/[0.03] border-white/10 rounded-2xl pl-10 text-xs text-white"
                   placeholder="e.g. client@example.com"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -213,9 +236,8 @@ export function EnquiryForm({ user }: { user: any }) {
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">City / Location</label>
               <div className="relative">
-                <input 
-                  type="text"
-                  className="w-full h-12 bg-white/[0.03] border border-white/10 rounded-2xl px-10 text-xs text-white outline-none focus:border-orange-500/50 transition-all"
+                <Input 
+                  className="h-12 bg-white/[0.03] border-white/10 rounded-2xl pl-10 text-xs text-white"
                   placeholder="e.g. Delhi NCR"
                   value={formData.city}
                   onChange={(e) => setFormData({...formData, city: e.target.value})}
@@ -227,26 +249,28 @@ export function EnquiryForm({ user }: { user: any }) {
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Loan Type</label>
               <div className="relative">
-                <select 
-                  className="w-full h-12 bg-white/[0.03] border border-white/10 rounded-2xl px-10 text-xs text-white outline-none focus:border-orange-500/50 transition-all appearance-none"
-                  value={formData.loan_type}
-                  onChange={(e) => setFormData({...formData, loan_type: e.target.value})}
+                <Select 
+                  value={formData.loan_type} 
+                  onValueChange={(val) => handleSelectChange('loan_type', val)}
                 >
-                  <option value="">Select Service</option>
-                  <option value="Personal Loan">Personal Loan</option>
-                  <option value="Business Loan">Business Loan</option>
-                  <option value="Home Loan">Home Loan</option>
-                  <option value="LAP">Loan Against Property</option>
-                </select>
+                  <SelectTrigger className="h-12 bg-white/[0.03] border-white/10 rounded-2xl pl-10 text-xs text-white">
+                    <SelectValue placeholder="Select Service" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-white/5 text-white">
+                    <SelectItem value="Personal Loan">Personal Loan</SelectItem>
+                    <SelectItem value="Business Loan">Business Loan</SelectItem>
+                    <SelectItem value="Home Loan">Home Loan</SelectItem>
+                    <SelectItem value="LAP">Loan Against Property</SelectItem>
+                  </SelectContent>
+                </Select>
                 <Coins className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Required Amount</label>
-              <input 
-                type="text"
-                className="w-full h-12 bg-white/[0.03] border border-white/10 rounded-2xl px-4 text-xs text-white outline-none focus:border-orange-500/50 transition-all"
+              <Input 
+                className="h-12 bg-white/[0.03] border-white/10 rounded-2xl px-4 text-xs text-white"
                 placeholder="e.g. 500000"
                 value={formData.amount}
                 onChange={(e) => setFormData({...formData, amount: e.target.value})}
@@ -256,9 +280,8 @@ export function EnquiryForm({ user }: { user: any }) {
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Preferred Bank</label>
               <div className="relative">
-                <input 
-                  type="text"
-                  className="w-full h-12 bg-white/[0.03] border border-white/10 rounded-2xl px-10 text-xs text-white outline-none focus:border-orange-500/50 transition-all font-bold"
+                <Input 
+                  className="h-12 bg-white/[0.03] border-white/10 rounded-2xl pl-10 text-xs text-white font-bold"
                   placeholder="HDFC / ICICI / Axis"
                   value={formData.preferred_bank}
                   onChange={(e) => setFormData({...formData, preferred_bank: e.target.value})}
