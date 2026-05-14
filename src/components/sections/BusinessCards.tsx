@@ -495,11 +495,11 @@ City: ${contact.city || contact.address}
           )}
           
           <DialogFooter className="sm:justify-end">
-            <DialogClose asChild>
+            <DialogClose render={
               <Button type="button" variant="ghost" className="rounded-xl border-white/5 hover:bg-white/5">
                 Close
               </Button>
-            </DialogClose>
+            } />
           </DialogFooter>
         </DialogContent>
       </Dialog>

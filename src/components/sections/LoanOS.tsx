@@ -15,12 +15,18 @@ import {
   Calendar,
   Bell,
   Save,
-  Trash2
+  Trash2,
+  LayoutGrid,
+  List as ListIcon,
+  Download,
+  Share2,
+  FileText
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { CaseCard } from '@/components/ui/CaseCard';
 import { 
   Dialog, 
   DialogContent, 
@@ -54,8 +60,25 @@ const MOCK_CASES: LoanCase[] = [
   { id: 'DC-9825', customer: 'Anita Desai', amount: '₹12,00,000', type: 'Personal', status: 'Rejected', rm: 'Dimpal', date: '2024-04-21' },
 ];
 
+/**
+ * Full Production Headers mirrored from MASTER_DATA
+ */
+const MASTER_HEADERS = [
+  "SALES_TEAM_STATUS", "TIMESTAMP", "FORM_SOURCE", "FULL_NAME", "MOBILE", "EMAIL_ID", "CITY_LOCATION", 
+  "LOAN_TYPE", "REQUIRED_LOAN_AMOUNT", "EMPLOYMENT_TYPE", "PREFERRED_BANK", "BANK", "SOURCE_NAME", 
+  "DOC_UPLOAD_STATUS", "REFERENCE_TYPE", "REF_CONTACT_NUMBER", "ATTACHMENT_URL", "SALES_UPDATE_TIME", 
+  "LOGIN_UPDATE_TIME", "LOGIN_HEAD_UPDATE_TIME", "RM_UPDATE_TIME", "CASE_STATUS", "CASE_REMARK", 
+  "ASSIGNED_COORDINATOR_EMAIL", "TAT_DEADLINE", "ESCALATION_L1", "ESCALATION_L2", "LOAN_NAME", 
+  "APPLICATION_NO", "DISBURSED_CODE", "DISBURSED_AMOUNT", "ROI", "DISBURSAL_DATE", "PF", 
+  "PDD_PENDING", "SECURED_TYPE", "LAST_UPDATE_BY", "TENURE", "LOAN_MODE", "INSURANCE_AMOUNT", 
+  "SUBVENTION", "ACCOUNTS_STATUS", "ACCOUNTS_REMARK", "LEAD_ID", "FOLDER_URL", "SALES_REMARK", 
+  "LOGIN_REMARK", "LOGIN_HEAD_REMARK", "ROUGH_WORK", "COMPANY_NAME", "SOURCE_TYPE", "SOURCE_EMAIL", 
+  "BANK_RM_REMARK", "EMP_CODE", "MANAGER_EMAIL", "REPORTING_HEAD"
+];
+
 export function LoanOS({ user }: { user: any }) {
   const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   const [cases, setCases] = useState<LoanCase[]>(MOCK_CASES);
   const [selectedCase, setSelectedCase] = useState<LoanCase | null>(null);
   const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
@@ -153,6 +176,24 @@ export function LoanOS({ user }: { user: any }) {
               Active Case Matrix
             </CardTitle>
             <div className="flex items-center gap-2">
+              <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 mr-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={cn("w-8 h-8 rounded-lg", viewMode === 'table' ? "bg-blue-600 text-white" : "text-slate-500 hover:text-white")}
+                  onClick={() => setViewMode('table')}
+                >
+                  <ListIcon className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={cn("w-8 h-8 rounded-lg", viewMode === 'grid' ? "bg-blue-600 text-white" : "text-slate-500 hover:text-white")}
+                  onClick={() => setViewMode('grid')}
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </Button>
+              </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <Input 
@@ -169,86 +210,167 @@ export function LoanOS({ user }: { user: any }) {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                  <th className="px-6 py-4">Case ID</th>
-                  <th className="px-6 py-4">Customer</th>
-                  <th className="px-6 py-4">Type</th>
-                  <th className="px-6 py-4">Amount</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-center">Follow-Up</th>
-                  <th className="px-6 py-4">RM / Node</th>
-                  <th className="px-6 py-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {cases.filter(c => c.customer.toLowerCase().includes(search.toLowerCase()) || c.id.toLowerCase().includes(search.toLowerCase())).map((item) => (
-                  <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
-                    <td className="px-6 py-4">
-                      <span className="text-xs font-mono text-slate-400 font-bold">{item.id}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-bold text-white uppercase italic">{item.customer}</p>
-                      <p className="text-[10px] text-slate-500">{item.date}</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge variant="outline" className="bg-white/5 border-white/10 text-[10px] font-bold uppercase">{item.type}</Badge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm font-black text-white italic">{item.amount}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge className={cn("text-[10px] font-black uppercase", statusColors[item.status])}>
-                        {item.status}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col items-center justify-center">
-                        {item.followUpDate ? (
-                          <button 
-                            onClick={() => handleOpenFollowUp(item)}
-                            className="group/follow bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded px-2 py-1 transition-all"
-                          >
-                            <div className="flex items-center gap-1.5">
-                              <Bell className="w-3 h-3 text-blue-400 animate-pulse" />
-                              <span className="text-[9px] font-black text-blue-400 uppercase italic">
-                                {item.followUpDate} @ {item.followUpTime}
-                              </span>
-                            </div>
-                          </button>
-                        ) : (
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleOpenFollowUp(item)}
-                            className="bg-white/5 hover:bg-blue-500/20 border border-transparent hover:border-blue-500/20 text-[9px] font-black uppercase italic h-7 px-2"
-                          >
-                            <Calendar className="w-3 h-3 mr-1 opacity-50" />
-                            Set Recall
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-[8px] font-black text-white">
-                          {item.rm.split(' ').map(n => n[0]).join('')}
-                        </div>
-                        <span className="text-xs font-bold text-slate-400">{item.rm}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                       <Button variant="ghost" size="icon" className="text-slate-500 hover:text-white">
-                          <MoreHorizontal className="w-4 h-4" />
-                       </Button>
-                    </td>
+          {viewMode === 'table' ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                    <th className="px-6 py-4">Case ID</th>
+                    <th className="px-6 py-4">Customer</th>
+                    <th className="px-6 py-4">Type</th>
+                    <th className="px-6 py-4">Amount</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-center">Follow-Up</th>
+                    <th className="px-6 py-4">RM / Node</th>
+                    <th className="px-6 py-4 text-right">Action</th>
                   </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {cases.filter(c => c.customer.toLowerCase().includes(search.toLowerCase()) || c.id.toLowerCase().includes(search.toLowerCase())).map((item) => (
+                    <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
+                      <td className="px-6 py-4">
+                        <span className="text-xs font-mono text-slate-400 font-bold">{item.id}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <p className="text-sm font-bold text-white uppercase italic">{item.customer}</p>
+                        <p className="text-[10px] text-slate-500">{item.date}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant="outline" className="bg-white/5 border-white/10 text-[10px] font-bold uppercase">{item.type}</Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="text-sm font-black text-white italic">{item.amount}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge className={cn("text-[10px] font-black uppercase", statusColors[item.status])}>
+                          {item.status}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col items-center justify-center">
+                          {item.followUpDate ? (
+                            <button 
+                              onClick={() => handleOpenFollowUp(item)}
+                              className="group/follow bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded px-2 py-1 transition-all"
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <Bell className="w-3 h-3 text-blue-400 animate-pulse" />
+                                <span className="text-[9px] font-black text-blue-400 uppercase italic">
+                                  {item.followUpDate} @ {item.followUpTime}
+                                </span>
+                              </div>
+                            </button>
+                          ) : (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleOpenFollowUp(item)}
+                              className="bg-white/5 hover:bg-blue-500/20 border border-transparent hover:border-blue-500/20 text-[9px] font-black uppercase italic h-7 px-2"
+                            >
+                              <Calendar className="w-3 h-3 mr-1 opacity-50" />
+                              Set Recall
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-[8px] font-black text-white">
+                            {item.rm.split(' ').map(n => n[0]).join('')}
+                          </div>
+                          <span className="text-xs font-bold text-slate-400">{item.rm}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                         <Button variant="ghost" size="icon" className="text-slate-500 hover:text-white">
+                            <MoreHorizontal className="w-4 h-4" />
+                         </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <>
+              {/* MASTER_DATA Detailed Modal */}
+              <Dialog open={!!selectedCase} onOpenChange={(open) => !open && setSelectedCase(null)}>
+                <DialogContent className="max-w-4xl bg-[#020617] border-white/10 text-white rounded-[2rem] p-0 overflow-hidden">
+                  <DialogHeader className="p-8 pb-0 flex flex-row items-center justify-between">
+                    <div>
+                      <DialogTitle className="text-3xl font-black italic uppercase tracking-tighter">Case Details</DialogTitle>
+                      <DialogDescription className="text-slate-500 font-bold uppercase text-[10px] tracking-widest mt-1">
+                        DC Protocol Override: {selectedCase?.id}
+                      </DialogDescription>
+                    </div>
+                    {selectedCase && (
+                      <Badge className={cn("px-4 py-2 rounded-xl text-xs font-black uppercase italic", statusColors[selectedCase.status])}>
+                        {selectedCase.status}
+                      </Badge>
+                    )}
+                  </DialogHeader>
+
+                  <div className="p-8 pb-4">
+                    <div className="flex flex-wrap items-center gap-3 mb-6 bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                        <div className="flex-1">
+                            <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">Addon Integrations Active</h4>
+                            <div className="flex gap-2">
+                                <Badge className="bg-cyan-500/10 text-cyan-400 border-none text-[9px] uppercase tracking-wider font-black"><Search className="w-3 h-3 mr-1"/> Cibil Sync: 782</Badge>
+                                <Badge className="bg-emerald-500/10 text-emerald-400 border-none text-[9px] uppercase tracking-wider font-black"><CheckCircle2 className="w-3 h-3 mr-1"/> E-Sign Ready</Badge>
+                                <Badge className="bg-purple-500/10 text-purple-400 border-none text-[9px] uppercase tracking-wider font-black"><FileText className="w-3 h-3 mr-1"/> Bank OCR: Scanned</Badge>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-h-[50vh] overflow-y-auto custom-scrollbar pr-4">
+                      {selectedCase && MASTER_HEADERS.map((header) => {
+                         const value = (selectedCase as any)[header.toLowerCase()] || (selectedCase as any)[header] || "---";
+                         return (
+                           <div key={header} className="space-y-1 p-3 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-blue-500/30 transition-all">
+                             <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none">{header}</p>
+                             <p className="text-[11px] font-bold text-slate-200 uppercase truncate">{value}</p>
+                           </div>
+                         );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="p-8 pt-4 border-t border-white/5 bg-white/[0.02] flex items-center justify-between">
+                     <div className="flex items-center gap-4">
+                        <Button variant="outline" className="rounded-xl border-white/10 bg-white/5 font-black uppercase text-[10px] tracking-widest">
+                          <Download className="w-4 h-4 mr-2" /> Export PDF
+                        </Button>
+                        <Button variant="outline" className="rounded-xl border-white/10 bg-white/5 font-black uppercase text-[10px] tracking-widest">
+                          <Share2 className="w-4 h-4 mr-2" /> Share Node
+                        </Button>
+                     </div>
+                     <div className="flex items-center gap-3">
+                        <Button 
+                          onClick={() => setSelectedCase(null)}
+                          className="bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-[10px] tracking-[0.2em] px-8 h-12 rounded-2xl shadow-xl shadow-blue-600/20"
+                        >
+                          LATCH_STATUS
+                        </Button>
+                     </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {cases.filter(c => c.customer.toLowerCase().includes(search.toLowerCase()) || c.id.toLowerCase().includes(search.toLowerCase())).map((item) => (
+                  <div key={item.id} onClick={() => setSelectedCase(item)} className="cursor-pointer">
+                    <CaseCard 
+                      id={item.id}
+                      name={item.customer}
+                      loan={item.type}
+                      amount={item.amount}
+                      status={item.status}
+                      rm={item.rm}
+                    />
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
       

@@ -1,0 +1,18 @@
+{
+  "id": "divyanshi-hub",
+  "name": "Divyanshi Capital | Cloud Hub V5 Sovereign Engine",
+  "version": "5.0.0",
+  "description": "The Sovereign Engine - Complete Architecture. Integrated with Sari Supreme v5.1, Laila Auto-Fix Agent, and Bulbhul Staff Avatars.",
+  "majorCapabilities": [
+    "leadManagement",
+    "hrOnboarding",
+    "disbursalAutomation",
+    "tatWatchdog",
+    "avatarAutomation"
+  ],
+  "requestFramePermissions": [
+    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/spreadsheets"
+  ]
+}

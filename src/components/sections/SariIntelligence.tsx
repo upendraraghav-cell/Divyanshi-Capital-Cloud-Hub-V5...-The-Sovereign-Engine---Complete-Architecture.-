@@ -23,7 +23,9 @@ import {
   Sparkles,
   Mic,
   Volume2,
-  Send
+  Send,
+  FileText,
+  User
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -94,7 +96,7 @@ export function SariIntelligence() {
     
     // Add Maalik's message if not already there
     const maalikMsg: Message = {
-      id: Date.now().toString(),
+      id: `maalik-${Date.now()}-${Math.random()}`,
       text: cmd,
       type: 'maalik',
       timestamp: new Date()
@@ -104,7 +106,7 @@ export function SariIntelligence() {
     try {
       const reply = await sariService.processCommand(cmd);
       const sariMsg: Message = {
-        id: (Date.now() + 1).toString(),
+        id: `sari-${Date.now()}-${Math.random()}`,
         text: reply,
         type: 'sari',
         timestamp: new Date()
@@ -112,7 +114,7 @@ export function SariIntelligence() {
       setMessages(prev => [...prev, sariMsg]);
     } catch (error) {
       const errorMsg: Message = {
-        id: (Date.now() + 1).toString(),
+        id: `err-${Date.now()}-${Math.random()}`,
         text: "SARI_ERROR: Neural bridge disconnected.",
         type: 'sari',
         timestamp: new Date()
@@ -211,24 +213,41 @@ export function SariIntelligence() {
 
               {/* Master AI URL Hub (SARI FOLDER) */}
               <div className="p-4 mx-6 mb-4 rounded-2xl bg-black/60 border border-[#00ffd5]/10 shadow-xl">
-                 <div className="flex items-center gap-2 mb-3">
-                    <Play className="w-3 h-3 text-[#00ffd5] fill-[#00ffd5]" />
-                    <span className="text-[9px] font-black uppercase text-[#00ffd5] tracking-widest italic">MASTER AI URL HUB (SARI FOLDER)</span>
+                 <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                       <Play className="w-3 h-3 text-[#00ffd5] fill-[#00ffd5]" />
+                       <span className="text-[9px] font-black uppercase text-[#00ffd5] tracking-widest italic">SOVEREIGN REGISTRY LINKS</span>
+                    </div>
+                    <span className="text-[7px] font-black text-slate-500 uppercase tracking-tighter">EXTERNAL DATA INTAKE</span>
                  </div>
-                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                    {[
-                      { name: 'O1', type: 'Logic' },
-                      { name: 'CLAUDE', type: 'Design' },
-                      { name: 'GEMINI', type: 'Data' },
-                      { name: 'PERPLEX', type: 'Search' },
-                      { name: 'MJ', type: 'Media' },
-                      { name: 'CORE', type: 'Bridge' }
-                    ].map((link) => (
-                      <button key={link.name} className="flex flex-col items-center justify-center p-2 rounded-lg bg-white/5 border border-white/5 hover:border-[#00ffd5]/30 transition-all">
-                         <span className="text-[8px] font-black text-white">{link.name}</span>
-                         <span className="text-[6px] text-slate-500 uppercase font-black">{link.type}</span>
-                      </button>
-                    ))}
+                 <div className="grid grid-cols-3 gap-2">
+                    <a 
+                      href="https://docs.google.com/forms/d/1cVEp6bUp4JR_yivEwh-HGHvtaCKCl3DTYpRW9PSiRXI/viewform" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-3 rounded-xl bg-white/5 border border-white/5 hover:border-emerald-500/30 transition-all flex flex-col items-center gap-1 group/link"
+                    >
+                       <FileText className="w-4 h-4 text-emerald-500 group-hover/link:scale-110 transition-transform" />
+                       <span className="text-[8px] font-black text-white uppercase italic">Client Form</span>
+                    </a>
+                    <a 
+                      href="https://docs.google.com/forms/d/1SaFxHlCu3GN6Udhxb4hW81RagBpAP-91En-tlNYiKl4/viewform" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-3 rounded-xl bg-white/5 border border-white/5 hover:border-blue-500/30 transition-all flex flex-col items-center gap-1 group/link"
+                    >
+                       <Zap className="w-4 h-4 text-blue-500 group-hover/link:scale-110 transition-transform" />
+                       <span className="text-[8px] font-black text-white uppercase italic">Sales Form</span>
+                    </a>
+                    <a 
+                      href="https://docs.google.com/forms/d/1xR-UyH8LXvAEacGXL8ZQA7nS7hJds2zlMtzxr6iiuGs/viewform" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-3 rounded-xl bg-white/5 border border-white/5 hover:border-purple-500/30 transition-all flex flex-col items-center gap-1 group/link"
+                    >
+                       <User className="w-4 h-4 text-purple-500 group-hover/link:scale-110 transition-transform" />
+                       <span className="text-[8px] font-black text-white uppercase italic">HR Matrix</span>
+                    </a>
                  </div>
               </div>
 

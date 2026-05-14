@@ -1,17 +1,150 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Divyanshi Capital | Hub V4 Sovereign Engine</title>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-slate-950 text-slate-50 antialiased selection:bg-orange-500/30 selection:text-orange-200">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<html>
+<head>
+    <base target="_top">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #2563eb; --bg: #020617; }
+        body { 
+            background: var(--bg); 
+            color: #fff; 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            overflow: hidden; 
+        }
+        .matrix-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #020617 100%);
+            z-index: -1;
+        }
+        nav {
+            display: flex; gap: 20px; padding: 30px;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+        }
+        .nav-item {
+            text-transform: uppercase; font-weight: 900; font-size: 10px;
+            letter-spacing: 2px; cursor: pointer; opacity: 0.5;
+            transition: 0.3s;
+        }
+        .nav-item.active { opacity: 1; color: var(--accent); }
+        .hero {
+            padding: 100px 50px; text-align: center;
+        }
+        h1 { 
+            font-size: 80px; font-weight: 900; font-style: italic; 
+            text-transform: uppercase; letter-spacing: -5px; 
+            margin: 0; line-height: 0.8;
+        }
+        .accent { color: var(--accent); }
+        .grid {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 20px; padding: 0 50px;
+        }
+        .card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 30px; border-radius: 30px;
+            transition: 0.3s;
+        }
+        .card:hover { border-color: var(--accent); transform: translateY(-5px); }
+        .card h3 { font-weight: 900; text-transform: uppercase; font-style: italic; margin-bottom: 5px; }
+        .card p { font-size: 10px; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; }
+
+        section { display: none; }
+        section.active { display: block; animation: fade 0.5s ease; }
+        @keyframes fade { from { opacity: 0; transform: translateY(10px); } }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg"></div>
+    
+    <nav>
+        <div class="nav-item active" onclick="show('home', this)">Home</div>
+        <div class="nav-item" onclick="show('client', this)">Client</div>
+        <div class="nav-item" onclick="show('sales', this)">Sales</div>
+        <div class="nav-item" onclick="show('hr', this)">HR Matrix</div>
+        <div class="nav-item" onclick="show('voice', this)" id="voice-nav">Voice AI</div>
+    </nav>
+
+    <main>
+        <section id="home" class="active">
+            <div class="hero">
+                <p style="font-size: 12px; font-weight: 900; letter-spacing: 5px; opacity: 0.3;">SOVEREIGN ENGINE V5</p>
+                <h1>DIVYANSHI <span class="accent">CAPITAL</span></h1>
+                <p style="margin-top: 30px; font-size: 14px; opacity: 0.6; font-weight: 500;">
+                    Complete Architecture Enabled. All Bulbhul Avatars Online.
+                </p>
+            </div>
+            <div class="grid">
+                <div class="card"><h3>Laila Core</h3><p>Predictive Logic & Auto-Fix</p></div>
+                <div class="card"><h3>Bulbhul AI</h3><p>Banker Avatar & Disbursal</p></div>
+                <div class="card"><h3>Sari V5</h3><p>Intelligence & Neural Bridge</p></div>
+            </div>
+        </section>
+
+        <section id="client">
+            <div style="padding: 50px;">
+                <h2 style="font-weight: 900; text-transform: uppercase; font-style: italic;">Registry Operations</h2>
+                <div id="data-list" class="card" style="font-family: monospace; font-size: 11px;">Loading P1 Master Data...</div>
+            </div>
+        </section>
+
+        <section id="sales">
+            <div style="padding: 50px;">
+                <h2 style="font-weight: 900; text-transform: uppercase; font-style: italic;">Sales Pipeline</h2>
+                <div class="grid">
+                    <div class="card"><h3>Active Leads</h3><p>Syncing from SALES_LOG...</p></div>
+                    <div class="card"><h3>Follow-ups</h3><p>Bulbhul 2h Watchdog Active</p></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="hr">
+            <div style="padding: 50px;">
+                <h2 style="font-weight: 900; text-transform: uppercase; font-style: italic;">HR Matrix</h2>
+                <div class="grid">
+                    <div class="card"><h3>Employee Roster</h3><p>EMP_CODE Protocols Active</p></div>
+                    <div class="card"><h3>Onboarding</h3><p>Awaiting MD Approval</p></div>
+                </div>
+            </div>
+        </section>
+        
+        <div id="voice-container" style="display:none; width: 100%; height: 100vh;">
+            <iframe src="voice.html" style="width:100%; height:100%; border:none;"></iframe>
+        </div>
+    </main>
+
+    <script>
+        function show(id, el) {
+            const section = document.getElementById(id);
+            if (!section && id !== 'voice') return;
+
+            document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            
+            if(id === 'voice') {
+                window.open('?page=voice', '_blank');
+                return;
+            }
+            
+            section.classList.add('active');
+            if (el) el.classList.add('active');
+            else {
+               // Fallback if el is not passed
+               document.querySelectorAll('.nav-item').forEach(nav => {
+                 if(nav.innerText.toLowerCase().includes(id)) nav.classList.add('active');
+               });
+            }
+        }
+        
+        // Dynamic loading logic for GAS
+        function loadMatrix() {
+            google.script.run.withSuccessHandler(data => {
+                document.getElementById('data-list').innerHTML = JSON.stringify(data);
+            }).getMasterData();
+        }
+    </script>
+</body>
 </html>

@@ -11,12 +11,24 @@ import {
   Smartphone,
   Copy,
   CheckCircle2,
+  PlusCircle,
+  Zap,
+  RefreshCw,
   Image as ImageIcon
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
@@ -27,10 +39,43 @@ export function IdentityManager() {
   const [staffPhone, setStaffPhone] = useState('+91 99999 00000');
   const [staffCode, setStaffCode] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
+  const [isProvisioning, setIsProvisioning] = useState(false);
+  
+  // New Employee Form State
+  const [newEmp, setNewEmp] = useState({ name: '', role: '', phone: '', email: '', brand: 'DIVYANSHI_CAPITAL' });
 
-  const handleLookup = () => {
-    if (!staffCode) return;
+  const handleProvisionNode = async () => {
+    if (!newEmp.name || !newEmp.phone) {
+      toast.error("Name and Phone are mandatory for Identity Activation");
+      return;
+    }
+    setIsProvisioning(true);
+    const toastId = toast.loading("Engaging Neural Bridge: Mapping HR Matrix...");
+    
+    try {
+      const res = await fetch('/api/v5/auto/employee-join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newEmp)
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast.success(`Success! EMP_CODE: ${data.empCode} generated. Assets provisioned.`, { id: toastId });
+        setStaffCode(data.empCode);
+        handleLookup(data.empCode);
+      } else {
+        toast.error(data.error || "Provisioning Failed", { id: toastId });
+      }
+    } catch (e) {
+      toast.error("Neural Link Timeout", { id: toastId });
+    } finally {
+      setIsProvisioning(false);
+    }
+  };
+
+  const handleLookup = (forcedCode?: string) => {
+    const codeToUse = forcedCode || staffCode;
+    if (!codeToUse) return;
     setIsSyncing(true);
     
     // Neural Mapping for Divyanshi Capital
@@ -55,7 +100,7 @@ export function IdentityManager() {
         'DC308': { name: 'Jyoti', role: 'Admin / Login Management', phone: '+91 93333 00000' }
       };
 
-      const found = staffMap[staffCode.toUpperCase()];
+      const found = staffMap[codeToUse.toUpperCase()];
       if (found) {
         setStaffName(found.name);
         setStaffRole(found.role);
@@ -81,11 +126,77 @@ export function IdentityManager() {
     <div className="space-y-8 pb-20">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight italic uppercase">Brand Assets & Identity</h1>
-          <p className="text-slate-400">Official Divyanshi Capital templates for staff & partners.</p>
+          <h1 className="text-[4rem] font-black text-white tracking-tighter italic uppercase leading-[0.8] mb-2">Neural Identity<br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">Provisioning</span></h1>
+          <p className="text-slate-400 font-medium">Official Divyanshi Capital V5 Node Onboarding & Asset Control.</p>
         </div>
-        <div className="flex gap-2">
-           <Badge className="bg-blue-600/10 text-blue-400 border-blue-600/20 py-1.5 px-3">Official Repository</Badge>
+        <div className="flex gap-3">
+           <Dialog>
+             {/* @ts-ignore */}
+             <DialogTrigger asChild>
+               <Button className="bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-widest text-[10px] h-14 px-8 rounded-2xl shadow-xl shadow-orange-600/20">
+                 <PlusCircle className="w-5 h-5 mr-3" />
+                 Provision New Node
+               </Button>
+             </DialogTrigger>
+             <DialogContent className="bg-[#0a131d] border-white/10 text-white sm:max-w-[500px] rounded-[2rem]">
+               <DialogHeader>
+                 <DialogTitle className="text-2xl font-black italic uppercase tracking-tight">Onboard New Employee</DialogTitle>
+                 <DialogDescription className="text-slate-500">
+                   Triggers V5 Neural Bridge: Auto-generates EMP_CODE, creates Drive folders, and pings Telegram.
+                 </DialogDescription>
+               </DialogHeader>
+               <div className="grid gap-6 py-6 font-medium">
+                 <div className="space-y-2">
+                   <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Full Name</label>
+                   <Input 
+                      placeholder="e.g. John Doe" 
+                      value={newEmp.name}
+                      onChange={(e) => setNewEmp({...newEmp, name: e.target.value})}
+                      className="bg-white/5 border-white/10 h-12" 
+                   />
+                 </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Target Designation</label>
+                      <Input 
+                        placeholder="e.g. Sales Manager" 
+                        value={newEmp.role}
+                        onChange={(e) => setNewEmp({...newEmp, role: e.target.value})}
+                        className="bg-white/5 border-white/10 h-12" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Mobile Node</label>
+                      <Input 
+                        placeholder="10-digit number" 
+                        value={newEmp.phone}
+                        onChange={(e) => setNewEmp({...newEmp, phone: e.target.value})}
+                        className="bg-white/5 border-white/10 h-12" 
+                      />
+                    </div>
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">Corporate Email</label>
+                   <Input 
+                     placeholder="email@divyanshicapital.com" 
+                     value={newEmp.email}
+                     onChange={(e) => setNewEmp({...newEmp, email: e.target.value})}
+                     className="bg-white/5 border-white/10 h-12" 
+                   />
+                 </div>
+               </div>
+               <DialogFooter>
+                 <Button 
+                    onClick={handleProvisionNode}
+                    disabled={isProvisioning}
+                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black uppercase tracking-widest h-14 rounded-2xl"
+                 >
+                   {isProvisioning ? <RefreshCw className="animate-spin w-5 h-5 mr-3" /> : <Zap className="w-5 h-5 mr-3 text-orange-400" />}
+                   Activate V5 Protocol
+                 </Button>
+               </DialogFooter>
+             </DialogContent>
+           </Dialog>
         </div>
       </div>
 
@@ -118,7 +229,7 @@ export function IdentityManager() {
                     />
                   </div>
                   <Button 
-                    onClick={handleLookup} 
+                    onClick={() => handleLookup()} 
                     disabled={isSyncing}
                     className="bg-orange-500 hover:bg-orange-600 text-white font-black uppercase text-[10px] px-6 h-11"
                   >

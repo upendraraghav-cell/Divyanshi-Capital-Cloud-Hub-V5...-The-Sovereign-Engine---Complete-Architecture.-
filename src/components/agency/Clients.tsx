@@ -211,7 +211,7 @@ export function Clients() {
                     </td>
                     <td className="px-6 py-6 text-right">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger>
                           <Button variant="ghost" size="icon" className="hover:bg-white/10 rounded-xl">
                             <MoreHorizontal className="w-4 h-4 text-slate-500" />
                           </Button>

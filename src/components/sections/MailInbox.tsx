@@ -261,9 +261,26 @@ export function MailInbox() {
                   <Trash2 className="w-4 h-4" />
                   Discard
                 </Button>
-                <Button className="rounded-xl gap-2 px-8" onClick={() => {
+                <Button className="rounded-xl gap-2 px-8" onClick={async () => {
                   toast.success("Message dispatched via Divyanshi Pipeline!");
                   setIsComposeOpen(false);
+                  
+                  // Neural Bridge Call (Real-time Sync)
+                  try {
+                    await fetch('/api/webhooks/bridge', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        type: 'MAIL_DISPATCH',
+                        client_name: composeData.to,
+                        subject: composeData.subject,
+                        remarks: composeData.body,
+                        status: 'DISPATCHED'
+                      })
+                    });
+                  } catch (e) {
+                    console.warn("Mail bridge log deferred.");
+                  }
                 }}>
                   <Send className="w-4 h-4" />
                   Send Message

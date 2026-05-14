@@ -1,22 +1,7 @@
 import { GoogleGenAI, Type, FunctionDeclaration } from "@google/genai";
 
-// Always use process.env.GEMINI_API_KEY for the Gemini API.
-let aiClient: GoogleGenAI | null = null;
-
-function getAi(): GoogleGenAI {
-  if (!aiClient) {
-    // Check multiple sources for the API key to ensure it "comes through"
-    const apiKey = process.env.GEMINI_API_KEY || 
-                   import.meta.env.VITE_GEMINI_API_KEY || 
-                   (globalThis as any).GEMINI_API_KEY;
-
-    if (!apiKey || apiKey.includes('TODO') || apiKey.includes('PLACEHOLDER')) {
-      throw new Error('GEMINI_API_KEY environment variable is required. Please set it in the Settings menu.');
-    }
-    aiClient = new GoogleGenAI({ apiKey });
-  }
-  return aiClient;
-}
+// SOVEREIGN AI BRIDGE - PROXIED VIA SERVER
+// All AI calls are routed through /api/ai/chat to protect API keys.
 
 const sendNotificationTool: FunctionDeclaration = {
   name: "sendNotification",
@@ -74,42 +59,29 @@ const createTaskTool: FunctionDeclaration = {
 export async function getSuperAGIResponse(
   prompt: string, 
   history: any[] = [],
-  persona: 'LAILA' | 'BULBHUL' = 'LAILA',
-  userRole: 'BOSS' | 'CLIENT' = 'CLIENT'
+  persona: 'LAILA' | 'BULBHUL' | 'SARI' = 'LAILA',
+  userRole: string = 'CLIENT'
 ) {
   try {
-    const systemInstruction = persona === 'LAILA' 
-      ? `You are Laila, the Elite Tech AI of Divyanshi Capital Cloud Hub. 
-         CORE MISSION:
-         1. Handle Technical Infrastructure, Theme Management, and Backend Operations.
-         2. Manage the Team Task Matrix. You can create tasks if the Boss requests it.
-         3. Be professional, concise, and solve technical problems sir/boss.
-         
-         PERSONALITY: 
-         - Professional, efficient, slightly robotic but highly respectful.
-         - Address the user as "Sir" or "Boss".`
-      : `You are Bulbhul, the world's best Sales Trainer for Divyanshi Capital.
-         
-         CORE MISSION:
-         1. Generate sales hacks, motivational tips, and training content.
-         2. Motivate the team to hit loan disbursal targets.
-         3. You can also suggest tasks to the Boss if you see training gaps.
-         
-         PERSONALITY:
-         - Energetic, motivating, and street-smart.
-         - Use Hinglish phrases like "Boss, aaj sales phodne ka din hai!" or "Target achieved karke hi chain milega."`;
-
-    const response = await getAi().models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: [...history, { role: "user", parts: [{ text: prompt }] }],
-      config: {
-        systemInstruction: systemInstruction,
-        tools: [{ functionDeclarations: [sendNotificationTool, createTaskTool] }],
-        temperature: 0.7,
-      },
+    const res = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        message: prompt, 
+        history,
+        persona,
+        userRole
+      })
     });
 
-    return response;
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    return {
+      text: data.text,
+      functionCalls: data.functionCalls,
+      suggestions: data.suggestions
+    };
   } catch (error) {
     console.error("SuperAGI AI Error:", error);
     throw error;

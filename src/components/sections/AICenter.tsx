@@ -280,7 +280,7 @@ export function AICenter({ user }: AICenterProps) {
           message: `${systemContext}\n\nUser Query: ${input}`, 
           history,
           persona: selectedModel.persona,
-          userRole: aiConfig.userRole
+          userRole: user?.role
         })
       });
 
@@ -305,6 +305,26 @@ export function AICenter({ user }: AICenterProps) {
           }
           if (name === 'sendNotification' && auth.currentUser) {
             await sendNotification(args);
+          }
+          
+          // Google & Social Services Handler
+          if (['sendEmail', 'scheduleEvent', 'notifyGoogleChat', 'sendWhatsApp', 'sendTelegram', 'sendSMS'].includes(name)) {
+             try {
+               const gasRes = await gasService.callBackend('AI_TOOL_EXECUTION', { toolName: name, args });
+               if (gasRes.ok) {
+                 toast.success(`Sovereign Hub: ${name} executed successfully.`);
+                 setSystemLogs(prev => [{ 
+                   id: `tool-${Date.now()}-${Math.random()}`, 
+                   message: `SUCCESS: ${name.toUpperCase()} node activated.`, 
+                   type: "intelligence", 
+                   timestamp: new Date() 
+                 } as AIActivity, ...prev]);
+               } else {
+                 toast.error(`Sovereign Hub: ${name} failed. Node restricted.`);
+               }
+             } catch (err) {
+               console.error(`AI Tool Error [${name}]:`, err);
+             }
           }
         }
       }
@@ -338,8 +358,8 @@ export function AICenter({ user }: AICenterProps) {
               <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", selectedModel.bgColor)}><selectedModel.icon className={cn("w-6 h-6", selectedModel.color)} /></div>
               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 max-w-[80%]"><p className="text-sm text-slate-300">{selectedModel.id === 'laila' ? "Welcome back, Boss. All nodes nominal." : "Namaste! Aaj ka target kya hai?"}</p></div>
             </div>
-            {messages.map((msg) => (
-              <div key={msg.id} className={cn("flex gap-4", msg.role === 'user' ? "flex-row-reverse" : "")}>
+            {messages.map((msg, i) => (
+              <div key={`ai-msg-${msg.id || i}`} className={cn("flex gap-4", msg.role === 'user' ? "flex-row-reverse" : "")}>
                 <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", msg.role === 'user' ? "bg-white/10" : selectedModel.bgColor)}>{msg.role === 'user' ? <Bot className="w-6 h-6 text-slate-400" /> : <selectedModel.icon className={cn("w-6 h-6", selectedModel.color)} />}</div>
                 <div className={cn("p-4 rounded-2xl max-w-[80%] border", msg.role === 'user' ? "bg-slate-800 border-white/10 rounded-tr-none text-white" : "bg-white/5 border-white/10 rounded-tl-none text-slate-300")}><p className="text-sm whitespace-pre-wrap">{msg.parts[0].text}</p></div>
               </div>
@@ -475,9 +495,9 @@ export function AICenter({ user }: AICenterProps) {
                     <div className="space-y-3">
                       <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Response Style</h4>
                       <div className="grid grid-cols-2 gap-2">
-                        {['Concise', 'Detailed', 'Technical', 'Creative'].map(style => (
+                        {['Concise', 'Detailed', 'Technical', 'Creative'].map((style, i) => (
                           <button
-                            key={style}
+                            key={`style-opt-${i}`}
                             onClick={() => updateConfig({ ...aiConfig, responseStyle: style as any })}
                             className={cn(
                               "px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
@@ -495,9 +515,9 @@ export function AICenter({ user }: AICenterProps) {
                     <div className="space-y-3">
                       <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Brand Tone</h4>
                       <div className="grid grid-cols-2 gap-2">
-                        {['Professional', 'Enthusiastic', 'Aggressive', 'Empathetic'].map(tone => (
+                        {['Professional', 'Enthusiastic', 'Aggressive', 'Empathetic'].map((tone, i) => (
                           <button
-                            key={tone}
+                            key={`tone-opt-${i}`}
                             onClick={() => updateConfig({ ...aiConfig, brandTone: tone as any })}
                             className={cn(
                               "px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
@@ -669,7 +689,7 @@ export function AICenter({ user }: AICenterProps) {
               <CardTitle className="text-2xl font-black italic text-white uppercase">{model.name}</CardTitle>
               <CardDescription className="text-slate-400 text-[10px] uppercase font-black">{model.description}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6"><div className="grid grid-cols-2 gap-2">{model.capabilities.map((cap) => (<div key={cap} className="flex items-center gap-2 p-2 rounded-lg bg-white/5 text-[10px] text-slate-400"><Zap className={cn("w-3 h-3", model.color)} />{cap}</div>))}</div><Button onClick={() => setSelectedModel(model)} className={cn("w-full h-12 rounded-2xl font-black uppercase tracking-widest", model.id === 'laila' ? "bg-blue-600 shadow-blue-600/20" : model.id === 'sari' ? "bg-pink-600 shadow-pink-600/20" : "bg-orange-500 shadow-orange-500/20")}>Initialize Core</Button></CardContent>
+            <CardContent className="space-y-6"><div className="grid grid-cols-2 gap-2">{model.capabilities.map((cap, i) => (<div key={`cap-${model.id}-${i}`} className="flex items-center gap-2 p-2 rounded-lg bg-white/5 text-[10px] text-slate-400"><Zap className={cn("w-3 h-3", model.color)} />{cap}</div>))}</div><Button onClick={() => setSelectedModel(model)} className={cn("w-full h-12 rounded-2xl font-black uppercase tracking-widest", model.id === 'laila' ? "bg-blue-600 shadow-blue-600/20" : model.id === 'sari' ? "bg-pink-600 shadow-pink-600/20" : "bg-orange-500 shadow-orange-500/20")}>Initialize Core</Button></CardContent>
           </Card>
         ))}
 
@@ -681,15 +701,8 @@ export function AICenter({ user }: AICenterProps) {
               <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
            </div>
            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {[
-                { name: 'WhatsApp Bot', provider: 'Meta Cloud', icon: MessageSquare, color: 'text-emerald-500', status: 'Online' },
-                { name: 'Slack Matrix', provider: 'Enterprise', icon: Cpu, color: 'text-indigo-400', status: 'Active' },
-                { name: 'Tally Prime', provider: 'Accounts', icon: RefreshCw, color: 'text-orange-400', status: 'Setup' },
-                { name: 'Sovereign Mail', provider: 'Rich-UI', icon: Send, color: 'text-sky-400', status: 'Optimal' },
-                { name: 'Bulk SMS', provider: 'Utility', icon: Zap, color: 'text-yellow-400', status: 'Ready' },
-                { name: 'Digi-Locker', provider: 'Govt Node', icon: Shield, color: 'text-blue-500', status: 'Secure' },
-              ].map((addon) => (
-                <div key={addon.name} className="p-6 rounded-[2rem] bg-white/5 border border-white/5 hover:border-white/20 transition-all group flex flex-col items-center text-center relative overflow-hidden">
+                 {[{ name: 'WhatsApp Bot', provider: 'Meta Cloud', icon: MessageSquare, color: 'text-emerald-500', status: 'Online' }, { name: 'Slack Matrix', provider: 'Enterprise', icon: Cpu, color: 'text-indigo-400', status: 'Active' }, { name: 'Tally Prime', provider: 'Accounts', icon: RefreshCw, color: 'text-orange-400', status: 'Setup' }, { name: 'Sovereign Mail', provider: 'Rich-UI', icon: Send, color: 'text-sky-400', status: 'Optimal' }, { name: 'Bulk SMS', provider: 'Utility', icon: Zap, color: 'text-yellow-400', status: 'Ready' }, { name: 'Digi-Locker', provider: 'Govt Node', icon: Shield, color: 'text-blue-500', status: 'Secure' },].map((addon, i) => (
+                 <div key={`addon-${i}`} className="p-6 rounded-[2rem] bg-white/5 border border-white/5 hover:border-white/20 transition-all group flex flex-col items-center text-center relative overflow-hidden">
                    <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-100 transition-opacity">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                    </div>
@@ -740,13 +753,13 @@ export function AICenter({ user }: AICenterProps) {
               <div className="space-y-4 md:col-span-2">
                 <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-4">Premium Sales Personas</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {[
+                   {[
                     { name: 'Karan (Sales Pro)', accent: 'Professional Hindi/English' },
                     { name: 'Meera (Executive)', accent: 'Clear Corporate' },
                     { name: 'Rahul (Urgent)', accent: 'Energy/High Intent' },
                     { name: 'Anjali (Support)', accent: 'Soft/Helpful' },
-                  ].map(voice => (
-                    <div key={voice.name} className="p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all flex items-center justify-between group cursor-pointer">
+                  ].map((voice, i) => (
+                    <div key={`voice-btn-${i}`} className="p-4 rounded-xl bg-white/5 border border-white/5 hover:border-white/20 transition-all flex items-center justify-between group cursor-pointer">
                       <div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-pink-500/10 flex items-center justify-center text-pink-500"><Play className="w-3 h-3 fill-current" /></div><div><p className="text-xs font-bold">{voice.name}</p><p className="text-[9px] text-slate-500">{voice.accent}</p></div></div>
                       <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-pink-500 transition-colors" />
                     </div>
@@ -775,8 +788,8 @@ export function AICenter({ user }: AICenterProps) {
           <CardHeader><CardTitle className="text-lg flex items-center gap-2 uppercase tracking-tighter font-black"><Brain className="w-5 h-5 text-pink-500" /> Sentiment Logic</CardTitle></CardHeader>
           <CardContent className="space-y-4">
              <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/10"><div className="flex items-center gap-2 mb-4"><PhoneIncoming className="w-4 h-4 text-indigo-400" /><span className="text-xs font-bold uppercase tracking-tight">Active Call Feed</span></div>
-               <div className="space-y-3">{[{ label: 'Politeness', value: 94 }, { label: 'Intent', value: 78 }, { label: 'Energy', value: 88 }].map(s => (
-                 <div key={s.label} className="space-y-1"><div className="flex justify-between text-[8px] font-black uppercase text-slate-500"><span>{s.label}</span><span>{s.value}%</span></div><div className="h-1 bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-indigo-500" style={{ width: `${s.value}%` }} /></div></div>
+               <div className="space-y-3">{[{ label: 'Politeness', value: 94 }, { label: 'Intent', value: 78 }, { label: 'Energy', value: 88 }].map((s, i) => (
+                 <div key={`sentiment-opt-${i}`} className="space-y-1"><div className="flex justify-between text-[8px] font-black uppercase text-slate-500"><span>{s.label}</span><span>{s.value}%</span></div><div className="h-1 bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-indigo-500" style={{ width: `${s.value}%` }} /></div></div>
                ))}</div>
              </div>
              <div className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/10"><span className="text-[10px] font-black uppercase text-orange-500 tracking-widest">Revenue Forecast</span><div className="text-2xl font-black italic text-white">₹1.25 Cr</div><p className="text-[9px] text-slate-500 uppercase font-bold mt-1">Pending Tally Sync</p></div>
