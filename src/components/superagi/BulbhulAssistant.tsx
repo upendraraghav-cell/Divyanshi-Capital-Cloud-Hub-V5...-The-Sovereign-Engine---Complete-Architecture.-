@@ -52,24 +52,19 @@ export function BulbhulAssistant({ user }: { user: any }) {
     };
 
     setMessages(prev => [...prev, userMsg]);
+    const userInput = input; // Store input before clearing
     setInput('');
     setIsTyping(true);
 
     try {
-      const prompt = `
-        You are Bulbhul, the AI Personal Banker for Divyanshi Capital. 
-        User Role: ${user?.role}. 
-        User Brand: ${user?.brand}.
-        Current Task: Banking Assistance & Loan Operations.
-        
-        Recent query: ${input}
-        
-        Provide a professional, banker-like response in a mix of Hindi and English (Hinglish) if appropriate. 
-        Keep it focused on loan processing, document requirements, and business growth.
-      `;
-
-      const response = await getSuperAGIResponse(prompt);
-      const bulbText = response.text || "I processed that request boss.";
+      const response = await getSuperAGIResponse(
+        userInput, // Use stored input
+        [],
+        'BULBHUL',  // **FIX: Pass BULBHUL persona explicitly**
+        user?.role === 'admin' || user?.role === 'manager' ? 'BOSS' : 'CLIENT'
+      );
+      
+      const bulbText = response.text || "I processed that request boss. How else can I help?";
       
       const bulbMsg: Message = {
         role: 'bulbhul',
@@ -78,8 +73,12 @@ export function BulbhulAssistant({ user }: { user: any }) {
       };
 
       setMessages(prev => [...prev, bulbMsg]);
-    } catch (error) {
-      toast.error("Bulbhul is experiencing a network glitch...");
+    } catch (error: any) {
+      console.error("Bulbhul Error:", error);
+      const errorMsg = error?.message?.includes('API key') 
+        ? "API key not configured. Please set GEMINI_API_KEY in Settings."
+        : "Bulbhul is experiencing a network glitch...";
+      toast.error(errorMsg);
     } finally {
       setIsTyping(false);
     }
@@ -182,7 +181,7 @@ export function BulbhulAssistant({ user }: { user: any }) {
                 <button 
                   key={i}
                   onClick={() => setInput(s.label)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/5 text-[9px] font-black text-slate-400 uppercase whitespace-nowrap hover:bg-orange-500/10 hover:text-orange-500 transition-all border-l-2 border-l-orange-500"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/5 text-[9px] font-black text-slate-400 uppercase whitespace-nowrap hover:bg-orange-500/10 hover:text-orange-400 transition-colors"
                 >
                   <s.icon className="w-3 h-3" /> {s.label}
                 </button>
@@ -198,7 +197,7 @@ export function BulbhulAssistant({ user }: { user: any }) {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                   placeholder="Ask Bulbhul for banking help..."
-                  className="w-full h-14 bg-slate-900 border border-white/10 rounded-2xl px-6 pr-24 text-xs text-white placeholder:text-slate-600 outline-none focus:border-orange-500/50 transition-all"
+                  className="w-full h-14 bg-slate-900 border border-white/10 rounded-2xl px-6 pr-24 text-xs text-white placeholder:text-slate-600 outline-none focus:border-orange-500/50 transition-colors"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                   <button className="w-10 h-10 rounded-xl text-slate-500 hover:text-white transition-colors">
